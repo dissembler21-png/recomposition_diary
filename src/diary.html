@@ -1,0 +1,1206 @@
+<title>Дневник рекомпозиции</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Oswald:wght@500;600&family=Golos+Text:wght@400;500;600&display=swap">
+<style>
+/* Layout: phone-first tool — sticky header, one scrolling column of cards, bottom tab bar; on wide screens the tabs move to a left rail. */
+:root{
+  --bg:#ECEFEE; --surface:#FFFFFF; --sunk:#F4F6F5; --ink:#162120; --muted:#5A6866; --line:#D3DAD8;
+  --accent:#C2412D; --accent-soft:#F6E1DC; --on-accent:#FFFFFF;
+  --good:#2C7A4C; --good-soft:#DCEFE3; --warn:#A66A12; --warn-soft:#F7EBD3; --bad:#B42318; --bad-soft:#F9DEDA;
+  --display:"Oswald","Arial Narrow",system-ui,sans-serif;
+  --body:"Golos Text",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  --r:10px;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#101615; --surface:#19211F; --sunk:#141B1A; --ink:#E6ECEA; --muted:#93A29F; --line:#2B3735;
+  --accent:#E8664F; --accent-soft:#3A221D; --on-accent:#140C0A;
+  --good:#5DBE86; --good-soft:#18301F; --warn:#E1A94C; --warn-soft:#33270F; --bad:#F2735F; --bad-soft:#3A1915; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#101615; --surface:#19211F; --sunk:#141B1A; --ink:#E6ECEA; --muted:#93A29F; --line:#2B3735;
+  --accent:#E8664F; --accent-soft:#3A221D; --on-accent:#140C0A;
+  --good:#5DBE86; --good-soft:#18301F; --warn:#E1A94C; --warn-soft:#33270F; --bad:#F2735F; --bad-soft:#3A1915; color-scheme:dark}
+*{box-sizing:border-box}
+html,body{background:var(--bg);color:var(--ink)}
+body{font-family:var(--body);font-size:15px;line-height:1.45;-webkit-text-size-adjust:100%}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:10;background:var(--surface)}
+a{color:var(--accent)}
+button{font:inherit;color:inherit}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.hdr{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:var(--surface);border-bottom:1px solid var(--line);
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:10px;
+  display:flex;align-items:center;gap:10px}
+.brand{font-family:var(--display);font-weight:600;font-size:20px;letter-spacing:.02em;text-transform:uppercase;margin:0;flex:1;min-width:0}
+.brand small{display:block;font-family:var(--body);font-size:12px;font-weight:400;letter-spacing:0;text-transform:none;color:var(--muted)}
+.sync{font-size:12px;padding:4px 9px;border-radius:99px;background:var(--sunk);color:var(--muted);border:1px solid var(--line);white-space:nowrap;cursor:pointer}
+.sync.ok{color:var(--good);background:var(--good-soft);border-color:transparent}
+.sync.wait{color:var(--warn);background:var(--warn-soft);border-color:transparent}
+.sync.err{color:var(--bad);background:var(--bad-soft);border-color:transparent}
+.iconbtn{border:1px solid var(--line);background:var(--sunk);border-radius:8px;padding:6px 10px;cursor:pointer;font-size:13px}
+.shell{display:block}
+main{padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:14px 150px;max-width:760px;margin:0 auto;display:grid;gap:14px}
+nav.tabs{position:fixed;left:0;right:0;bottom:0;z-index:6;background:var(--surface);border-top:1px solid var(--line);
+  display:grid;grid-template-columns:repeat(6,1fr);padding-bottom:env(safe-area-inset-bottom,0px);
+  padding-left:env(safe-area-inset-left,0px);padding-right:env(safe-area-inset-right,0px)}
+nav.tabs a{display:flex;flex-direction:column;align-items:center;gap:2px;padding:8px 2px 9px;text-decoration:none;color:var(--muted);font-size:11.5px;font-weight:500;min-width:0}
+nav.tabs a svg{width:22px;height:22px;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+nav.tabs a[aria-current="page"]{color:var(--accent)}
+@media (min-width:900px){
+  .shell{display:grid;grid-template-columns:200px 1fr}
+  nav.tabs{position:sticky;top:57px;height:calc(100vh - 57px);display:flex;flex-direction:column;border-top:0;border-right:1px solid var(--line);padding:12px 10px;gap:2px;bottom:auto}
+  nav.tabs a{flex-direction:row;gap:10px;font-size:14px;padding:9px 10px;border-radius:8px}
+  nav.tabs a[aria-current="page"]{background:var(--accent-soft)}
+  main{padding-bottom:90px}
+}
+h2{font-family:var(--display);font-weight:500;font-size:17px;letter-spacing:.03em;text-transform:uppercase;margin:0;text-wrap:balance}
+h3{font-size:15px;margin:0;font-weight:600}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:14px;display:grid;gap:12px;min-width:0}
+.card.flat{background:transparent;border-style:dashed}
+.row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.between{justify-content:space-between}
+.grid2{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.grid3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+@media (max-width:420px){.grid3{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.muted{color:var(--muted)}
+.small{font-size:13px}
+.tiny{font-size:12px}
+.num{font-family:var(--display);font-variant-numeric:tabular-nums;font-weight:500}
+.fld{display:grid;gap:4px;min-width:0}
+.fl{font-size:12.5px;color:var(--muted)}
+.fi{display:flex;align-items:center;background:var(--sunk);border:1px solid var(--line);border-radius:8px;min-width:0}
+.fi:focus-within{border-color:var(--accent)}
+.in{border:0;background:transparent;padding:9px 10px;font:inherit;font-size:16px;color:var(--ink);width:100%;min-width:0;font-variant-numeric:tabular-nums}
+.in:focus{outline:none}
+.fu{padding-right:10px;color:var(--muted);font-size:13px;white-space:nowrap}
+textarea.in{min-height:64px;resize:vertical}
+select.in{appearance:auto}
+.scale{display:grid;grid-template-columns:repeat(var(--n,5),minmax(0,1fr));gap:4px;max-width:calc(var(--n,5)*46px)}
+.sc{min-width:0;padding:0;height:36px;border-radius:8px;border:1px solid var(--line);background:var(--sunk);cursor:pointer;font-variant-numeric:tabular-nums;font-size:14px}
+.sc.on{background:var(--ink);color:var(--surface);border-color:var(--ink)}
+.chips{display:flex;gap:6px;flex-wrap:wrap}
+.chip{border:1px solid var(--line);background:var(--sunk);border-radius:99px;padding:6px 12px;cursor:pointer;font-size:14px}
+.chip.on{background:var(--ink);color:var(--surface);border-color:var(--ink)}
+.chip.sug{border-color:var(--accent);color:var(--accent)}
+.chip.sug.on{background:var(--accent);color:var(--on-accent)}
+.btn{border:1px solid var(--line);background:var(--sunk);border-radius:9px;padding:10px 14px;cursor:pointer;font-weight:500;font-size:15px;text-align:center;text-decoration:none;color:var(--ink);display:inline-flex;align-items:center;justify-content:center;gap:6px}
+.btn.primary{background:var(--accent);color:var(--on-accent);border-color:var(--accent)}
+.btn.big{padding:14px 18px;font-size:17px;width:100%}
+.btn.danger{color:var(--bad)}
+.btn.sm{padding:6px 10px;font-size:13px}
+.btn:disabled{opacity:.5;cursor:default}
+.pill{display:inline-block;font-size:12px;padding:2px 8px;border-radius:99px;background:var(--sunk);color:var(--muted);white-space:nowrap}
+.pill.good{background:var(--good-soft);color:var(--good)}
+.pill.warn{background:var(--warn-soft);color:var(--warn)}
+.pill.bad{background:var(--bad-soft);color:var(--bad)}
+.pill.acc{background:var(--accent-soft);color:var(--accent)}
+.note{border-radius:8px;padding:10px 12px;font-size:14px;background:var(--sunk)}
+.note.warn{background:var(--warn-soft);color:var(--ink)}
+.note.bad{background:var(--bad-soft)}
+.note.good{background:var(--good-soft)}
+.stat{display:grid;gap:2px}
+.stat b{font-family:var(--display);font-weight:500;font-size:26px;line-height:1.1;font-variant-numeric:tabular-nums}
+.stat span{font-size:12px;color:var(--muted)}
+.datenav{display:flex;align-items:center;gap:8px}
+.datenav .d{flex:1;text-align:center;font-weight:600}
+.ex{border:1px solid var(--line);border-radius:var(--r);background:var(--surface);padding:12px;display:grid;gap:10px}
+.ex.done{border-color:var(--good)}
+.exhead{display:flex;gap:10px;align-items:flex-start}
+.exn{font-family:var(--display);font-size:18px;color:var(--muted);min-width:20px}
+.sets{display:grid;gap:6px}
+.set{display:grid;grid-template-columns:22px minmax(0,1.2fr) minmax(0,1fr) minmax(0,.8fr) minmax(0,.8fr) 44px;gap:5px;align-items:center}
+.set .in{padding:8px 6px;text-align:center;font-size:16px}
+.set .fi{border-radius:7px}
+.sethead{font-size:11px;color:var(--muted);text-align:center}
+.ok{width:44px;height:40px;border-radius:8px;border:1px solid var(--line);background:var(--sunk);cursor:pointer;font-size:18px}
+.ok.on{background:var(--good);border-color:var(--good);color:var(--surface)}
+.e1{font-size:11.5px;color:var(--muted);grid-column:2/-1;margin-top:-3px}
+.timer{position:fixed;left:0;right:0;bottom:calc(58px + env(safe-area-inset-bottom,0px));z-index:7;padding-left:max(12px,env(safe-area-inset-left,0px));padding-right:max(12px,env(safe-area-inset-right,0px));padding-block:0 8px;pointer-events:none}
+.timer .in2{max-width:760px;margin:0 auto;background:var(--ink);color:var(--surface);border-radius:12px;padding:10px 12px;display:flex;align-items:center;gap:10px;pointer-events:auto;box-shadow:0 6px 24px rgba(0,0,0,.25)}
+.timer b{font-family:var(--display);font-size:28px;font-weight:500;font-variant-numeric:tabular-nums;min-width:70px}
+.timer .bar{flex:1;height:6px;border-radius:3px;background:rgba(127,127,127,.35);overflow:hidden}
+.timer .bar i{display:block;height:100%;background:var(--accent)}
+.timer button{border:0;background:rgba(127,127,127,.3);color:inherit;border-radius:8px;padding:7px 10px;cursor:pointer}
+.timer.over .in2{background:var(--accent);color:var(--on-accent)}
+@media (min-width:900px){.timer{bottom:14px;left:200px}}
+.clock{font-family:var(--display);font-size:64px;font-weight:500;line-height:1;text-align:center;font-variant-numeric:tabular-nums;letter-spacing:.02em}
+.clock.paused{color:var(--warn)}
+.list{display:grid;gap:0}
+.li{display:flex;gap:10px;align-items:center;padding:10px 0;border-top:1px solid var(--line);cursor:pointer;background:none;border-left:0;border-right:0;border-bottom:0;text-align:left;width:100%}
+.li:first-child{border-top:0}
+.li .grow{flex:1;min-width:0}
+.tbl{overflow-x:auto;border:1px solid var(--line);border-radius:8px}
+table{border-collapse:collapse;width:100%;font-size:13px;font-variant-numeric:tabular-nums}
+th,td{padding:7px 9px;border-bottom:1px solid var(--line);text-align:right;white-space:nowrap}
+th:first-child,td:first-child{text-align:left}
+th{font-weight:500;color:var(--muted);background:var(--sunk)}
+tr:last-child td{border-bottom:0}
+.bars{display:grid;gap:8px}
+.barrow{display:grid;grid-template-columns:90px 1fr auto;gap:8px;align-items:center;font-size:13px}
+.track{height:10px;background:var(--sunk);border-radius:5px;position:relative;overflow:hidden;border:1px solid var(--line)}
+.track i{position:absolute;inset:0 auto 0 0;background:var(--accent);border-radius:5px}
+.track i.in-range{background:var(--good)}
+.track em{position:absolute;top:-2px;bottom:-2px;border-left:2px solid var(--ink);opacity:.5}
+.chart svg{width:100%;height:auto;display:block}
+.chart .ax{stroke:var(--line);stroke-width:1}
+.chart text{fill:var(--muted);font-size:11px;font-family:var(--body)}
+.empty{padding:18px;text-align:center;color:var(--muted);font-size:14px;border:1px dashed var(--line);border-radius:8px}
+.tog{display:flex;gap:8px;align-items:center;font-size:13px;color:var(--muted);cursor:pointer;user-select:none}
+.meal{border-top:1px solid var(--line);padding-top:10px;display:grid;gap:8px}
+.meal summary::-webkit-details-marker{display:none}
+.meal summary{cursor:pointer}
+.tog input{width:18px;height:18px;accent-color:var(--accent)}
+.fieldrow{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:10px;align-items:end}
+details summary{cursor:pointer;font-weight:500}
+.link{background:none;border:0;padding:0;color:var(--accent);cursor:pointer;text-decoration:underline;font-size:inherit}
+.hr{height:1px;background:var(--line)}
+.kpis{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+.phase{font-family:var(--display);text-transform:uppercase;letter-spacing:.06em;font-size:12px;color:var(--accent)}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+</style>
+
+<header class="hdr">
+  <h1 class="brand">Дневник<small id="hdrsub">загрузка…</small></h1>
+  <button class="sync" id="sync" type="button">…</button>
+  <a class="iconbtn" href="#more" id="morebtn">Ещё</a>
+</header>
+<div class="shell">
+  <nav class="tabs" id="tabs"></nav>
+  <main id="app"><div class="empty">Загружаю дневник…</div></main>
+</div>
+<div class="timer" id="timer" hidden></div>
+
+<script>
+"use strict";
+/* Same file runs in two places: the claude.ai artifact (cloud db + calorie counting) and the offline PWA on GitHub Pages (phone storage only). */
+const PWA = !(window.claude && window.claude.use);
+const DIARY_URL = 'https://claude.ai/artifact/FWDTzbDToh48pVQfFv7upp';
+const LS_EXPORT = 'rk_lastexport_v1';
+/* ---------- helpers ---------- */
+const $ = s => document.querySelector(s);
+function h(tag, props, ...kids){
+  const el = document.createElement(tag); let val;
+  if (props) for (const [k,v] of Object.entries(props)){
+    if (v==null || v===false) continue;
+    if (k==='class') el.className = v;
+    else if (k==='style') el.style.cssText = v;
+    else if (k==='value') val = v;
+    else if (k==='checked') el.checked = !!v;
+    else if (k.startsWith('on') && typeof v==='function') el.addEventListener(k.slice(2), v);
+    else el.setAttribute(k, v===true ? '' : v);
+  }
+  for (const c of kids.flat(9)){ if (c==null || c===false) continue; el.append(c.nodeType ? c : String(c)); }
+  if (val!==undefined) el.value = val;
+  return el;
+}
+const frag = (...k) => h('div',{style:'display:contents'},...k);
+const clone = o => o==null ? o : JSON.parse(JSON.stringify(o));
+const isNum = v => typeof v==='number' && isFinite(v);
+const r1 = n => Math.round(n*10)/10;
+const fmt = (n, d=1) => !isNum(n) ? '—' : String(Math.round(n*10**d)/10**d).replace('.',',');
+const fmtIn = n => n==null ? '' : String(n).replace('.',',');
+const parseNum = s => { if (s==null) return null; s = String(s).trim().replace(',','.').replace(/\s/g,''); if (s==='') return null; const n = Number(s); return isFinite(n) ? n : null; };
+const iso = d => { const z = new Date(d); return z.getFullYear()+'-'+String(z.getMonth()+1).padStart(2,'0')+'-'+String(z.getDate()).padStart(2,'0'); };
+const parseISO = s => { const [y,m,d] = s.split('-').map(Number); return new Date(y,m-1,d); };
+const addDays = (s,n) => { const d = parseISO(s); d.setDate(d.getDate()+n); return iso(d); };
+const diffDays = (a,b) => Math.round((parseISO(a)-parseISO(b))/864e5);
+const today = () => iso(new Date());
+const dShort = s => parseISO(s).toLocaleDateString('ru-RU',{day:'numeric',month:'short'}).replace('.','');
+const dLong = s => parseISO(s).toLocaleDateString('ru-RU',{weekday:'long',day:'numeric',month:'long'});
+const mmss = sec => { sec = Math.max(0, Math.round(sec)); const m = Math.floor(sec/60), s = sec%60; return m+':'+String(s).padStart(2,'0'); };
+const hmmss = sec => { sec = Math.max(0, Math.floor(sec)); const hh = Math.floor(sec/3600); return hh ? hh+':'+mmss(sec%3600).padStart(5,'0') : mmss(sec); };
+const rid = () => Math.random().toString(36).slice(2,8);
+const range = (a,b) => Array.from({length:b-a+1},(_,i)=>a+i);
+const avg = a => a.length ? a.reduce((x,y)=>x+y,0)/a.length : null;
+const plural = (n, a, b, c) => { n = Math.abs(n)%100; const n1 = n%10; if (n>10&&n<20) return c; if (n1>1&&n1<5) return b; if (n1===1) return a; return c; };
+
+/* ---------- defaults (mirrors the plan and the spreadsheets) ---------- */
+const SL = 'https://www.strengthlog.com/';
+const P = (n, sr, rir, rest, link) => ({n, sr, rir, rest, link: SL+link+'/'});
+const DEFAULT_PROGRAM = {
+  'Ф1': {name:'Фулбади 1', ex:[
+    P('Присед в Смите до скамьи','2–3 × 8–10','4→3','2 мин','smith-machine-squat'),
+    P('Жим гантелей на наклонной 30°','2–3 × 8–12','4→3','2 мин','dumbbell-incline-press'),
+    P('Тяга гантели одной рукой','2–3 × 10–12','4→3','1,5 мин','dumbbell-row'),
+    P('Жим штанги сидя','2 × 8–12','4→3','2 мин','seated-barbell-overhead-press'),
+    P('Сгибания с гантелями','2 × 10–15','4→3','1 мин','dumbbell-curl'),
+    P('Разгибания с канатом','2 × 10–15','4→3','1 мин','tricep-pushdown-with-rope'),
+    P('Шраги со штангой + удержание','2 × 10–12 + 20 с','4→3','1,5 мин','barbell-shrug')]},
+  'Ф2': {name:'Фулбади 2', ex:[
+    P('Румынская тяга','2–3 × 8–10','4→3','2 мин','romanian-deadlift'),
+    P('Жим штанги лёжа','2–3 × 6–10','4→3','2–2,5 мин','bench-press'),
+    P('Тяга верхнего блока','2–3 × 10–12','4→3','1,5 мин','lat-pulldown-with-pronated-grip'),
+    P('Махи в стороны','2–3 × 12–20','4→3','1 мин','dumbbell-lateral-raise'),
+    P('Молотки','2 × 10–15','4→3','1 мин','hammer-curl'),
+    P('Разгибания лёжа EZ','2 × 10–15','4→3','1 мин','lying-triceps-extension-ez-bar'),
+    P('Подъём на носки в Смите','2 × 10–15','4→3','1 мин','barbell-standing-calf-raise')]},
+  'A': {name:'A · Верх: плечи и жим', ex:[
+    P('Жим штанги стоя','4 × 5–8','2','2,5–3 мин','overhead-press'),
+    P('Жим гантелей на наклонной 30°','3 × 8–12','1–2','2 мин','dumbbell-incline-press'),
+    P('Тяга гантелей лёжа на наклонной','3 × 10–12','1–2','2 мин','chest-supported-dumbbell-row'),
+    P('Махи в стороны','4 × 12–20','0–2','1–1,5 мин','dumbbell-lateral-raise'),
+    P('Разведения на заднюю дельту','3 × 12–20','0–2','1 мин','reverse-dumbbell-flyes-on-incline-bench'),
+    P('Разгибания лёжа EZ','3 × 10–15','1–2','1,5 мин','lying-triceps-extension-ez-bar'),
+    P('Сгибания запястий','2 × 15–20','0–1','1 мин','barbell-wrist-curl'),
+    P('Обратные сгибания запястий','2 × 15–20','0–1','1 мин','barbell-wrist-extension'),
+    P('Тяга нижнего блока между ног','3 × 12–15','1–2','1,5 мин','cable-pull-through')]},
+  'B': {name:'B · Низ и руки', ex:[
+    P('Присед со штангой / в Смите','3–4 × 5–8','2','3 мин','squat'),
+    P('Румынская тяга','3 × 8–10','2','2,5 мин','romanian-deadlift'),
+    P('Ягодичный мост в Смите','4 × 10–15','2','2 мин','smith-machine-hip-thrust'),
+    P('Подъём на носки в Смите','3 × 10–15','1','1 мин','barbell-standing-calf-raise'),
+    P('Махи в стороны','3 × 15–20','0–2','1 мин','dumbbell-lateral-raise'),
+    P('Подъём штанги EZ на бицепс','3 × 8–12','1–2','1,5 мин','ez-curl'),
+    P('Жим узким хватом в Смите','3 × 8–12','1–2','2 мин','close-grip-bench-press'),
+    P('Шраги со штангой + удержание','3 × 10–12 + 20–30 с','1','1,5–2 мин','barbell-shrug')]},
+  'C': {name:'C · Верх: спина и руки', ex:[
+    P('Тяга штанги в наклоне','3–4 × 6–10','2','2,5 мин','barbell-row'),
+    P('Тяга верхнего блока','3 × 8–12','1–2','2 мин','lat-pulldown-with-pronated-grip'),
+    P('Жим штанги лёжа','3 × 5–8','2','2,5–3 мин','bench-press'),
+    P('Жим штанги сидя','3 × 8–12','1–2','2 мин','seated-barbell-overhead-press'),
+    P('Махи на нижнем блоке одной рукой','4 × 12–20','0–2','1 мин','cable-lateral-raise'),
+    P('Разведения на заднюю дельту','3 × 12–20','0–2','1 мин','reverse-dumbbell-flyes-on-incline-bench'),
+    P('Сгибания на наклонной скамье','3 × 10–15','0–2','1,5 мин','incline-dumbbell-curl'),
+    P('Разгибания с канатом / из-за головы','3 × 10–15','0–2','1 мин','tricep-pushdown-with-rope'),
+    P('Обратные сгибания EZ','2–3 × 12–15','1','1 мин','reverse-barbell-curl')]}
+};
+const DEFAULT_TARGETS = {kcal:3200, protein:[200,220], fat:[90,100], carbs:[350,380], fiber:[40,50], water:[3.5,4.5], height:195};
+const MAIN_LIFTS = ['Жим штанги стоя','Жим штанги лёжа','Присед со штангой / в Смите','Присед в Смите до скамьи','Румынская тяга','Тяга штанги в наклоне','Подъём штанги EZ на бицепс','Жим узким хватом в Смите'];
+const LOWER = ['Присед в Смите до скамьи','Присед со штангой / в Смите','Румынская тяга','Ягодичный мост в Смите'];
+const ISO = /Махи|Разведения|Сгибания|Разгибания|запястий|Молотки|Обратные|носки|блока между/;
+const STAGES = {
+  1:{name:'Этап 1 · недели 1–2', rhythm:'2 тренировки в неделю, минимум 2 дня отдыха между ними', tpl:['Ф1','Ф2'], gap:3, perWeek:2, rir:'4', setsNote:'2 подхода, учим технику и ищем веса', next:'крепатура проходит за 48 ч, суставы без боли'},
+  2:{name:'Этап 2 · недели 3–4', rhythm:'3 в неделю: Т О Т О Т О О', tpl:['Ф1','Ф2'], gap:2, perWeek:3, rir:'3', setsNote:'3 подхода', next:'веса растут, сон и самочувствие не хуже исходных'},
+  3:{name:'Этап 3 · недели 5–6', rhythm:'1 через 1, лишний день отдыха после каждой 4-й тренировки', tpl:['A','B','C'], gap:2, perWeek:4, rir:'2–3', setsNote:'3 подхода', next:'все тренировки выполнены, усталость 3 и ниже из 5'},
+  4:{name:'Этап 4 · с недели 7', rhythm:'чистое «1 через 1»', tpl:['A','B','C'], gap:2, perWeek:4, rir:null, setsNote:'полный объём, RIR по программе', next:'работают правила прогрессии и разгрузок'}
+};
+/* body fields: key, label, unit, tracked by default */
+const BODY_FIELDS = [
+  ['weight','Вес','кг',1],['waist','Талия по пупку','см',1],['hips','Таз (ягодицы)','см',0],['chest','Грудь','см',1],['shoulders','Плечи по дельтам','см',1],
+  ['neck','Шея','см',1],['bicepsL','Бицепс напряж. Л','см',1],['bicepsR','Бицепс напряж. П','см',1],['forearmL','Предплечье Л','см',1],['forearmR','Предплечье П','см',0],
+  ['thighL','Бедро Л','см',1],['thighR','Бедро П','см',0],['calfL','Голень Л','см',0],['calfR','Голень П','см',0],['wrist','Запястье','см',0],
+  ['bodyFat','Жир по весам','%',0],['restHR','Пульс покоя утром','уд/мин',1],['bpSys','Давление верхнее','мм',0],['bpDia','Давление нижнее','мм',0]
+];
+const PHOTO_FIELDS = [['phFront','Фото спереди'],['phSide','Фото сбоку'],['phBack','Фото сзади'],['phForearm','Фото предплечий']];
+/* climb optional fields (core: time, stops, RPE, knees are always shown) */
+const CLIMB_OPT = [
+  ['weather','Погода'],['sleepQ','Сон прошлой ночью'],['plan','Отрезок и пауза по плану'],['hrStart','Пульс на старте'],['hrRec','Пульс восстановления (+1, +2, +3, +5 мин)'],
+  ['breath','Дыхание 0–10'],['legs','Ноги 0–10'],['descent','Время спуска'],['marks','Ориентиры на маршруте'],['doms','Крепатура 24/48 ч'],['feel','Самочувствие через 15 мин']
+];
+const STOP_REASONS = ['дыхание','ноги','пульс','колено','другое'];
+
+/* ---------- store: local cache + outbox, synced to the artifact db ---------- */
+const COLS = ['config','days','workouts','climbs','measures','baseline'];
+const LS_CACHE = 'rk_cache_v1', LS_OUT = 'rk_outbox_v1', LS_TIMER = 'rk_timer_v1';
+const S = {cache:{}, outbox:{}, seq:0, db:null, dbState:'connecting', flushing:false, syncErr:null, lastSync:null,
+  view:'today', viewDate:today(), calc:new Set(), processing:false, sampleBlocked:null, sampleState:null, openWorkout:null, openClimb:null, pendingRender:false, ui:{}};
+function lsGet(k){ try { return JSON.parse(localStorage.getItem(k)||'null'); } catch(e){ return null; } }
+function lsSet(k,v){ try { localStorage.setItem(k, JSON.stringify(v)); } catch(e){} }
+function loadLocal(){
+  S.cache = lsGet(LS_CACHE) || {}; S.outbox = lsGet(LS_OUT) || {};
+  for (const c of COLS) S.cache[c] = S.cache[c] || {};
+  S.seq = Object.values(S.outbox).reduce((m,i)=>Math.max(m,i.seq||0),0);
+}
+function saveLocal(){ lsSet(LS_CACHE, S.cache); lsSet(LS_OUT, S.outbox); }
+const get = (col,id) => S.cache[col][id];
+const all = col => Object.entries(S.cache[col]).map(([id,d]) => ({...d, _id:id}));
+function put(col,id,data,keepTime){
+  data = clone(data); delete data._id; if (!keepTime || !data.updatedAt) data.updatedAt = Date.now();
+  S.cache[col][id] = data;
+  if (!PWA) S.outbox[col+'/'+id] = {col,id,data,seq:++S.seq};
+  saveLocal(); updateSync(); scheduleRender(); flush();
+}
+function del(col,id){
+  delete S.cache[col][id];
+  if (!PWA) S.outbox[col+'/'+id] = {col,id,data:null,seq:++S.seq};
+  saveLocal(); updateSync(); scheduleRender(); flush();
+}
+const withTimeout = (p, ms) => Promise.race([p, new Promise((_,rej)=>setTimeout(()=>rej({code:'unavailable',message:'timeout'}), ms))]);
+async function flush(){
+  if (!S.db || S.flushing) return;
+  S.flushing = true; let again = false;
+  try {
+    for (const path of Object.keys(S.outbox)){
+      const it = S.outbox[path]; if (!it) continue;
+      const ref = S.db.collection(it.col).doc(it.id);
+      try {
+        if (it.data===null) await withTimeout(ref.delete(), 20000); else await withTimeout(ref.set(it.data), 20000);
+        if (S.outbox[path] && S.outbox[path].seq===it.seq) delete S.outbox[path]; else again = true;
+        saveLocal(); S.lastSync = Date.now(); S.syncErr = null;
+      } catch(e){ S.syncErr = (e && e.code) || 'unavailable'; break; }
+    }
+  } finally { S.flushing = false; updateSync(); }
+  if (again && !S.syncErr) flush();
+}
+function applySnap(col, snap){
+  if (snap.metadata && snap.metadata.fromCache && snap.empty) return;
+  const next = {};
+  for (const d of snap.docs) next[d.id] = clone(d.data());
+  for (const it of Object.values(S.outbox)) if (it.col===col){ if (it.data===null) delete next[it.id]; else next[it.id] = it.data; }
+  S.cache[col] = next; saveLocal(); scheduleRender();
+}
+async function connect(){
+  let db = null;
+  try { db = window.claude && window.claude.use ? await window.claude.use('db') : null; } catch(e){ db = null; }
+  if (!db){ S.dbState = 'none'; updateSync(); return; }
+  S.db = db; S.dbState = 'on';
+  for (const col of COLS){
+    try { db.collection(col).onSnapshot(s => applySnap(col, s), e => { S.syncErr = e && e.code; updateSync(); }); } catch(e){}
+  }
+  updateSync(); flush();
+}
+window.addEventListener('online', () => { S.syncErr = null; flush(); updateSync(); });
+window.addEventListener('offline', updateSync);
+setInterval(() => { if (Object.keys(S.outbox).length){ S.syncErr = null; flush(); } }, 20000);
+function unsentCount(){ const t = lsGet(LS_EXPORT) || 0; let k = 0; for (const c of COLS) for (const d of Object.values(S.cache[c])) if ((d.updatedAt||0) > t) k++; return k; }
+function exportTxt(){ return JSON.stringify({kind:'recomposition-diary', from: PWA ? 'offline' : 'diary', exportedAt: new Date().toISOString(), data: S.cache}); }
+function importTxt(txt){
+  const j = JSON.parse(txt); const data = j.data || j; let k = 0;
+  if (!COLS.some(c => data[c])) throw new Error('not a diary');
+  for (const col of COLS) for (const [id, doc] of Object.entries(data[col]||{})){ const cur = get(col,id); if (!cur || (doc.updatedAt||0) > (cur.updatedAt||0)){ put(col, id, doc, true); k++; } }
+  processMeals(); return k;
+}
+async function copyOut(btn, okText){
+  const txt = exportTxt();
+  try { await navigator.clipboard.writeText(txt); btn.textContent = okText; lsSet(LS_EXPORT, Date.now()); updateSync(); return true; }
+  catch(err){ const ta = $('#exp'); ta.value = txt; ta.hidden = false; ta.focus(); ta.select(); btn.textContent = 'Выдели и скопируй текст ниже'; lsSet(LS_EXPORT, Date.now()); return false; }
+}
+function updateSync(){
+  const el = $('#sync'); if (!el) return;
+  const n = Object.keys(S.outbox).length;
+  let cls = 'sync', txt;
+  if (PWA){ const k = unsentCount(); el.className = 'sync'+(k?' wait':' ok'); el.textContent = k ? 'Перенести: '+k : 'Всё перенесено'; return; }
+  if (S.dbState==='connecting'){ txt = n ? 'Ждут отправки: '+n : 'Подключаюсь…'; }
+  else if (S.dbState==='none'){ cls += ' wait'; txt = 'Только на устройстве'; }
+  else if (n){ cls += ' wait'; txt = (navigator.onLine===false || S.syncErr) ? 'Офлайн · ждут '+n : 'Отправляю '+n; }
+  else { cls += ' ok'; txt = 'Сохранено'; }
+  el.className = cls; el.textContent = txt;
+}
+
+/* ---------- config & derived ---------- */
+function cfg(){
+  const c = get('config','main') || {};
+  return {startDate: c.startDate || firstDataDate(), startManual: !!c.startDate, stageOverride: c.stageOverride || null, targets: {...DEFAULT_TARGETS, ...(c.targets||{})},
+    program: c.program || DEFAULT_PROGRAM, route: c.route || {}, tracked: c.tracked || null, climbTracked: c.climbTracked || null, raw: c};
+}
+/* the plan starts with the first thing recorded, unless a start date was set by hand */
+function firstDataDate(){
+  let m = null; const take = d => { if (d && /^\d{4}-\d\d-\d\d$/.test(d) && (!m || d < m)) m = d; };
+  for (const [id, d] of Object.entries(S.cache.days)) if (Object.keys(d).some(k => !['date','updatedAt'].includes(k) && d[k]!=null && !(Array.isArray(d[k]) && !d[k].length))) take(id);
+  for (const w of Object.values(S.cache.workouts)) take(w.date);
+  for (const c of Object.values(S.cache.climbs)) take(c.date);
+  for (const id of Object.keys(S.cache.measures)) take(id);
+  return m;
+}
+function saveCfg(patch){ const c = clone(get('config','main') || {}); put('config','main', {...c, ...patch}); }
+const dayDoc = d => get('days', d) || {};
+function saveDay(date, key, v){ const d = clone(get('days',date) || {date}); if (v==null) delete d[key]; else d[key] = v; d.date = date; put('days', date, d); }
+function stageInfo(date){
+  const c = cfg();
+  if (!c.startDate) return {week:1, stage: c.stageOverride ? Number(c.stageOverride) : 1, auto: !c.stageOverride, started:false, days:-1, none:true};
+  const days = diffDays(date, c.startDate); const week = Math.floor(days/7)+1;
+  let stage = week<=2 ? 1 : week<=4 ? 2 : week<=6 ? 3 : 4;
+  if (days<0) stage = 1;
+  if (c.stageOverride) stage = Number(c.stageOverride);
+  return {week: Math.max(1,week), stage, auto: !c.stageOverride, started: days>=0, days};
+}
+const doneWorkouts = () => all('workouts').filter(w => w.status==='done').sort((a,b) => (a.date+a.startedAt) < (b.date+b.startedAt) ? -1 : 1);
+const activeWorkout = () => all('workouts').find(w => w.status==='active');
+function suggestion(date){
+  const st = stageInfo(date); const S_ = STAGES[st.stage];
+  const ws = doneWorkouts().filter(w => w.date <= date);
+  const todays = ws.filter(w => w.date===date);
+  const last = ws.filter(w => w.date < date).pop();
+  const lastAny = ws[ws.length-1];
+  const lastTpl = lastAny ? lastAny.template : null;
+  const i = S_.tpl.indexOf(lastTpl);
+  const nextTpl = i<0 ? S_.tpl[0] : S_.tpl[(i+1) % S_.tpl.length];
+  if (todays.length) return {kind:'done', tpl: todays[todays.length-1].template, next: nextTpl};
+  let gap = S_.gap;
+  if (st.stage===3 && cfg().startDate){ const since = ws.filter(w => diffDays(w.date, cfg().startDate) >= 28).length; if (since>0 && since%4===0) gap = 3; }
+  const since = last ? diffDays(date, last.date) : 99;
+  const inWeek = ws.filter(w => diffDays(date, w.date) < 7).length;
+  if (since < gap) return {kind:'rest', tpl: nextTpl, reason: since===0 ? '' : 'после тренировки '+dShort(last.date)+' нужен отдых', since};
+  if (st.stage<=2 && inWeek >= S_.perWeek) return {kind:'rest', tpl: nextTpl, reason:'за последние 7 дней уже '+inWeek+' '+plural(inWeek,'тренировка','тренировки','тренировок')};
+  return {kind:'train', tpl: nextTpl};
+}
+function avg7(date){
+  const vals = []; for (let i=0;i<7;i++){ const w = dayDoc(addDays(date,-i)).weight; if (isNum(w)) vals.push(w); }
+  return vals.length>=4 ? avg(vals) : null;
+}
+function weightSignal(date){
+  const a = avg7(date), b = avg7(addDays(date,-7)); const st = stageInfo(date);
+  if (a==null) return {a, text:'Нужно минимум 4 взвешивания за 7 дней, чтобы посчитать среднее.', cls:''};
+  if (b==null) return {a, text:'Изменение за неделю появится через 7 дней записей.', cls:''};
+  const ch = (a-b)/b;
+  if (st.week<=3) return {a, ch, text:'Первые 3 недели: уходит вода, на калории не реагируем.', cls:''};
+  if (ch < -0.012) return {a, ch, text:'Быстрее 1,2% в неделю. Если так 2 недели подряд: +150–200 ккал.', cls:'warn'};
+  if (ch > -0.005) return {a, ch, text:'Медленнее 0,5% в неделю. Если так 2 недели и талия стоит: −150–200 ккал или +2000 шагов.', cls:'warn'};
+  return {a, ch, text:'Темп в норме: 0,5–1,2% в неделю.', cls:'good'};
+}
+function badRecovery(date){
+  for (let i=0;i<3;i++){ const d = dayDoc(addDays(date,-i)); const bad = (isNum(d.sleepQ) && d.sleepQ<=2) || (isNum(d.stress) && d.stress>=4); if (!bad) return false; }
+  return true;
+}
+function stepTarget(date){
+  const c = cfg(); const st = stageInfo(date); const base = [];
+  if (!c.startDate) return {text:'неделя 1: просто замерь среднее', n:null};
+  for (let i=0;i<7;i++){ const s = dayDoc(addDays(c.startDate,i)).steps; if (isNum(s)) base.push(s); }
+  if (st.week<=1 || base.length<3) return {text:'неделя 1: просто замерь среднее', n:null};
+  const b = Math.round(avg(base)/500)*500; const n = Math.min(b + 1000*(st.week-1), 10000);
+  return {text:'цель недели ~'+n.toLocaleString('ru-RU'), n};
+}
+/* ---------- workout logic ---------- */
+function parseSR(sr){
+  const m = /^(\d+)(?:\s*[–-]\s*(\d+))?\s*×\s*(\d+)(?:\s*[–-]\s*(\d+))?(.*)$/.exec(sr.trim());
+  if (!m) return {s0:2,s1:3,r0:8,r1:12,extra:''};
+  return {s0:+m[1], s1:+(m[2]||m[1]), r0:+m[3], r1:+(m[4]||m[3]), extra:(m[5]||'').trim()};
+}
+const restSec = rest => { const m = /([\d,]+)/.exec(rest||''); return m ? Math.round(parseFloat(m[1].replace(',','.'))*60) : 90; };
+const bumpRir = r => String(r).replace(/\d+/g, d => String(Math.min(5, +d+1)));
+function planFor(ex, stage, deload, light){
+  const p = parseSR(ex.sr); let n = stage===1 ? p.s0 : stage===3 ? Math.min(p.s1,3) : p.s1;
+  let rir = STAGES[stage].rir || ex.rir;
+  if (deload){ n = Math.max(1, Math.ceil(n/2)); rir = '4'; }
+  else if (light){ n = Math.max(1, n-1); rir = bumpRir(rir); }
+  return {n, rir, reps: p.r0===p.r1 ? String(p.r0) : p.r0+'–'+p.r1, r0:p.r0, r1:p.r1, extra:p.extra, rest: restSec(ex.rest)};
+}
+const e1rm = (w,r,rir) => (isNum(w) && isNum(r) && r>0) ? w*(1+(r+(isNum(rir)?rir:0))/30) : null;
+const incFor = name => LOWER.includes(name) ? 5 : ISO.test(name) ? 1 : 2.5;
+function lastFor(name, exceptId){
+  const ws = doneWorkouts().filter(w => w._id!==exceptId);
+  for (let i=ws.length-1;i>=0;i--){ const e = (ws[i].ex||[]).find(x => x.n===name); if (e){ const sets = (e.sets||[]).filter(s => s.done && isNum(s.w) && isNum(s.r)); if (sets.length) return {date: ws[i].date, sets}; } }
+  return null;
+}
+function hintFor(name, r1, last){
+  if (!last) return {text:'Первый раз: подбери рабочий вес по RIR, запиши, что получилось.', w:null};
+  const w = Math.max(...last.sets.map(s => s.w));
+  const prev = last.sets.map(s => fmt(s.w)+'×'+s.r).join(', ');
+  const allTop = last.sets.every(s => s.r >= r1);
+  if (allTop){ const inc = incFor(name); return {text:'Прошлый раз '+dShort(last.date)+': '+prev+'. Все подходы на '+r1+', прибавь '+(inc===1?'минимальный шаг (1–2,5 кг)':'+'+fmt(inc)+' кг')+'.', w: w+inc, up:true}; }
+  return {text:'Прошлый раз '+dShort(last.date)+': '+prev+'. Тот же вес, добивай повторы до '+r1+'.', w};
+}
+function bestE1(ex){ let b = null; for (const s of ex.sets||[]) if (s.done){ const e = e1rm(s.w,s.r,s.rir); if (e && (!b || e>b)) b = e; } return b; }
+function startWorkout(tpl, date, deload, light){
+  const c = cfg(); const st = stageInfo(date); const prog = c.program[tpl];
+  const id = date+'-'+rid();
+  const ex = prog.ex.map(e => { const p = planFor(e, st.stage, deload, light); const last = lastFor(e.n); const hint = hintFor(e.n, p.r1, last);
+    return {n:e.n, plan:{sets:p.n, reps:p.reps, rir:p.rir, rest:p.rest, extra:p.extra, r1:p.r1}, link:e.link, sets: range(1,p.n).map(() => ({w: hint.w, r:null, rir:null, pain:null, done:false}))}; });
+  put('workouts', id, {date, template:tpl, stage:st.stage, deload:!!deload, light:!!light, status:'active', startedAt: Date.now(), ex, notes:''});
+  S.openWorkout = id; wake(true);
+}
+
+/* ---------- climb logic ---------- */
+function routeElev(){ const r = cfg().route; if (isNum(r.steps) && isNum(r.stepCm)) return r1(r.steps*r.stepCm/100); if (isNum(r.trackerElev)) return r.trackerElev; return null; }
+function climbCalc(c){
+  const m = c.manual || {};
+  const pausesSec = (c.stops||[]).reduce((s,x) => s + ((x.end||x.start) - x.start)/1000, 0);
+  const total = isNum(m.totalMin) ? m.totalMin : (c.startedAt && c.finishedAt ? (c.finishedAt - c.startedAt)/60000 : null);
+  const moving = isNum(m.movingMin) ? m.movingMin : (total!=null ? total - pausesSec/60 : null);
+  const stops = isNum(m.stops) ? m.stops : (c.stops||[]).length;
+  const forced = isNum(m.forced) ? m.forced : (c.stops||[]).filter(s => s.kind!=='плановая').length;
+  const ascents = c.ascents || 1;
+  const elev = isNum(c.elev) ? c.elev : routeElev();
+  const tElev = elev!=null ? elev*ascents : null;
+  const out = {total, moving, stops, forced, elev: tElev};
+  out.vspeed = (tElev!=null && total>0) ? tElev/total : null;
+  out.density = (total>0 && moving!=null) ? moving/total : null;
+  out.seg = (moving!=null) ? moving/(stops+1) : null;
+  out.pause = (stops>0 && total!=null && moving!=null) ? (total-moving)*60/stops : null;
+  out.power = (isNum(c.weight) && tElev!=null && moving>0) ? c.weight*9.81*tElev/(moving*60) : null;
+  out.hrDrop = (c.hr && isNum(c.hr.finish) && isNum(c.hr.p1)) ? c.hr.finish - c.hr.p1 : null;
+  if ((c.kneeUp>=3) || (c.kneeDown>=3) || (c.kneeMorning>=2)) out.signal = 'Снизить';
+  else if (isNum(c.rpe) && c.rpe<=6 && !(c.kneeDown>2) && isNum(c.doms48) && c.doms48<=2) out.signal = 'Можно повышать';
+  else out.signal = 'Держать';
+  return out;
+}
+const doneClimbs = () => all('climbs').filter(c => c.status==='done').sort((a,b) => a.date < b.date ? -1 : a.date > b.date ? 1 : (a.startedAt||0)-(b.startedAt||0));
+const activeClimb = () => all('climbs').find(c => c.status==='active' || c.status==='post');
+
+/* ---------- rest timer, wake lock, sound ---------- */
+let AC = null, wakeLock = null, wantWake = false;
+function beep(){ try { AC = AC || new (window.AudioContext||window.webkitAudioContext)(); const t = AC.currentTime; [0,0.25,0.5].forEach(o => { const g = AC.createGain(), os = AC.createOscillator(); os.frequency.value = 880; g.gain.setValueAtTime(0.0001,t+o); g.gain.exponentialRampToValueAtTime(0.3,t+o+0.02); g.gain.exponentialRampToValueAtTime(0.0001,t+o+0.18); os.connect(g).connect(AC.destination); os.start(t+o); os.stop(t+o+0.2); }); } catch(e){} try { navigator.vibrate && navigator.vibrate([200,100,200]); } catch(e){} }
+document.addEventListener('pointerdown', () => { try { AC = AC || new (window.AudioContext||window.webkitAudioContext)(); if (AC.state==='suspended') AC.resume(); } catch(e){} }, {once:true});
+async function wake(on){ wantWake = on; try { if (on && !wakeLock && navigator.wakeLock){ wakeLock = await navigator.wakeLock.request('screen'); wakeLock.addEventListener('release', () => { wakeLock = null; }); } if (!on && wakeLock){ await wakeLock.release(); wakeLock = null; } } catch(e){} }
+document.addEventListener('visibilitychange', () => { if (document.visibilityState==='visible' && wantWake) wake(true); });
+let T = lsGet(LS_TIMER); let beeped = false;
+function startTimer(sec, label){ T = {end: Date.now()+sec*1000, total: sec, label}; beeped = false; lsSet(LS_TIMER, T); tick(); }
+function stopTimer(){ T = null; lsSet(LS_TIMER, null); tick(); }
+function tick(){
+  const el = $('#timer');
+  if (!T){ el.hidden = true; return; }
+  const left = (T.end - Date.now())/1000;
+  if (left < -120){ stopTimer(); return; }
+  el.hidden = false; el.className = 'timer' + (left<=0 ? ' over' : '');
+  if (left<=0 && !beeped){ beeped = true; beep(); }
+  const pct = Math.max(0, Math.min(100, 100*(1 - left/T.total)));
+  if (!el.firstChild){
+    el.append(h('div',{class:'in2'}, h('b',{id:'tleft'}), h('div',{style:'flex:1;min-width:0;display:grid;gap:4px'}, h('span',{class:'tiny',id:'tlabel'}), h('div',{class:'bar'}, h('i',{id:'tbar'}))),
+      h('button',{type:'button', onclick:() => { T.end += 30000; T.total += 30; beeped = false; lsSet(LS_TIMER,T); tick(); }}, '+30 с'),
+      h('button',{type:'button', onclick: stopTimer}, '✕')));
+  }
+  $('#tleft').textContent = left>0 ? mmss(left) : '+'+mmss(-left);
+  $('#tlabel').textContent = left>0 ? 'Отдых · '+(T.label||'') : 'Отдых окончен, следующий подход';
+  $('#tbar').style.width = pct+'%';
+}
+setInterval(tick, 250);
+
+/* ---------- UI atoms ---------- */
+function card(title, ...kids){ return h('section',{class:'card'}, title ? (typeof title==='string' ? h('h2',{},title) : title) : null, ...kids); }
+function num(label, val, onSave, o={}){
+  const id = 'f_' + (o.id || label).replace(/[^\wа-яё]/gi,'_');
+  const inp = h('input',{id, class:'in', type:'text', inputmode: o.int ? 'numeric' : 'decimal', autocomplete:'off', value: fmtIn(val), placeholder: o.ph || '',
+    onchange: e => { const v = parseNum(e.target.value); onSave(v); }});
+  return h('label',{class:'fld', for:id}, label ? h('span',{class:'fl'}, label) : null, h('span',{class:'fi'}, inp, o.unit ? h('span',{class:'fu'}, o.unit) : null));
+}
+function text(label, val, onSave, o={}){
+  const id = 'f_' + (o.id || label).replace(/[^\wа-яё]/gi,'_');
+  const inp = o.area ? h('textarea',{id, class:'in', placeholder:o.ph||'', onchange: e => onSave(e.target.value.trim() || null)}) : h('input',{id, class:'in', type:'text', placeholder:o.ph||'', onchange: e => onSave(e.target.value.trim() || null)});
+  inp.value = val || '';
+  return h('label',{class:'fld', for:id}, label ? h('span',{class:'fl'}, label) : null, h('span',{class:'fi'}, inp));
+}
+function scale(label, val, min, max, onSave, hint){
+  return h('div',{class:'fld'}, h('span',{class:'fl'}, label, hint ? ' · '+hint : ''),
+    h('div',{class:'scale', style:'--n:'+(max-min+1), role:'group', 'aria-label':label}, range(min,max).map(n => h('button',{type:'button', class:'sc'+(val===n?' on':''), 'aria-pressed': String(val===n), onclick: () => onSave(val===n ? null : n)}, n))));
+}
+function chips(opts, val, onPick, sug){ return h('div',{class:'chips'}, opts.map(o => { const [v,l] = Array.isArray(o) ? o : [o,o]; return h('button',{type:'button', class:'chip'+(v===val?' on':'')+(v===sug?' sug':''), 'aria-pressed':String(v===val), onclick: () => onPick(v)}, l); })); }
+function tog(label, on, onSet){ const id = 't_'+label.replace(/[^\wа-яё]/gi,'_'); return h('label',{class:'tog', for:id}, h('input',{type:'checkbox', id, checked:on, onchange: e => onSet(e.target.checked)}), label); }
+function stat(v, l){ return h('div',{class:'stat'}, h('b',{}, v), h('span',{}, l)); }
+function dateNav(){
+  const d = S.viewDate, t = today();
+  return h('div',{class:'datenav'},
+    h('button',{class:'btn sm', type:'button', 'aria-label':'Предыдущий день', onclick: () => { S.viewDate = addDays(d,-1); render(); }}, '‹'),
+    h('div',{class:'d'}, d===t ? 'Сегодня, '+dShort(d) : dLong(d)),
+    h('button',{class:'btn sm', type:'button', 'aria-label':'Следующий день', disabled: d>=t, onclick: () => { S.viewDate = addDays(d,1); render(); }}, '›'));
+}
+function confirmBtn(label, onYes){
+  const b = h('button',{class:'btn sm danger', type:'button'}, label);
+  b.addEventListener('click', () => { if (b.dataset.arm){ onYes(); } else { b.dataset.arm = '1'; b.textContent = 'Точно? Нажми ещё раз'; setTimeout(() => { if (b.isConnected){ delete b.dataset.arm; b.textContent = label; } }, 4000); } });
+  return b;
+}
+function pillSignal(s){ return h('span',{class:'pill '+(s==='Снизить'?'bad':s==='Можно повышать'?'good':'')}, s); }
+
+/* ---------- charts ---------- */
+function lineChart(series, o={}){
+  const pts = series.flatMap(s => s.pts);
+  if (pts.length < 2) return h('div',{class:'empty'}, o.empty || 'График появится после двух записей.');
+  const W = 600, H = o.h || 210, L = 44, R = 12, Tp = 12, B = 26;
+  let x0 = Math.min(...pts.map(p => p.x)), x1 = Math.max(...pts.map(p => p.x)); if (x1===x0) x1 = x0+864e5;
+  let y0 = Math.min(...pts.map(p => p.y), ...(o.refs||[]).map(r=>r.y)), y1 = Math.max(...pts.map(p => p.y), ...(o.refs||[]).map(r=>r.y));
+  const pad = (y1-y0)*0.1 || Math.abs(y1)*0.05 || 1; y0 -= pad; y1 += pad;
+  const step = niceStep((y1-y0)/4); y0 = Math.floor(y0/step)*step; y1 = Math.ceil(y1/step)*step;
+  const X = x => L + (x-x0)/(x1-x0)*(W-L-R), Y = y => Tp + (1-(y-y0)/(y1-y0))*(H-Tp-B);
+  const ns = 'http://www.w3.org/2000/svg';
+  const sv = (t, a, txt) => { const e = document.createElementNS(ns, t); for (const k in a){ if (k==='fill' || k==='stroke') e.style[k] = a[k]; else e.setAttribute(k, a[k]); } if (txt!=null) e.textContent = txt; return e; };
+  const svg = sv('svg',{viewBox:`0 0 ${W} ${H}`, role:'img', 'aria-label': o.label || 'график'});
+  for (let y = y0; y <= y1+1e-9; y += step){ svg.append(sv('line',{x1:L, x2:W-R, y1:Y(y), y2:Y(y), class:'ax'})); svg.append(sv('text',{x:L-6, y:Y(y)+4, 'text-anchor':'end'}, fmt(y, step<1?1:0))); }
+  const xt = [x0, (x0+x1)/2, x1];
+  xt.forEach((x,i) => svg.append(sv('text',{x:X(x), y:H-7, 'text-anchor': i===0?'start':i===2?'end':'middle'}, dShort(iso(x)))));
+  for (const r of (o.refs||[])) { svg.append(sv('line',{x1:L, x2:W-R, y1:Y(r.y), y2:Y(r.y), stroke:'var(--muted)', 'stroke-dasharray':'4 4', 'stroke-width':1})); svg.append(sv('text',{x:W-R, y:Y(r.y)-4, 'text-anchor':'end'}, r.label)); }
+  for (const s of series){
+    const p = s.pts.slice().sort((a,b) => a.x-b.x); if (!p.length) continue;
+    const col = s.color || 'var(--accent)';
+    if (s.dots) p.forEach(q => svg.append(sv('circle',{cx:X(q.x), cy:Y(q.y), r: s.r || 2.5, fill: col, opacity: s.line ? .35 : .9})));
+    if (s.line && p.length>1){
+      const d = p.map((q,i) => (i?'L':'M')+X(q.x).toFixed(1)+' '+Y(q.y).toFixed(1)).join(' ');
+      if (s.area){ svg.append(sv('path',{d: d+` L${X(p[p.length-1].x).toFixed(1)} ${H-B} L${X(p[0].x).toFixed(1)} ${H-B} Z`, fill: col, opacity:.08})); }
+      svg.append(sv('path',{d, fill:'none', stroke: col, 'stroke-width':2.2, 'stroke-linejoin':'round', 'stroke-linecap':'round'}));
+      const e = p[p.length-1]; svg.append(sv('circle',{cx:X(e.x), cy:Y(e.y), r:4, fill: col}));
+    }
+  }
+  const legend = series.length>1 ? h('div',{class:'row tiny muted'}, series.map(s => h('span',{class:'row', style:'gap:5px'}, h('i',{style:`display:inline-block;width:12px;height:3px;border-radius:2px;background:${s.color||'var(--accent)'}`}), s.name))) : null;
+  return h('div',{class:'chart'}, svg, legend);
+}
+function niceStep(raw){ const p = Math.pow(10, Math.floor(Math.log10(raw||1))); const n = raw/p; return (n<=1?1:n<=2?2:n<=2.5?2.5:n<=5?5:10)*p; }
+const tms = d => parseISO(d).getTime();
+
+/* ---------- views ---------- */
+const ICONS = {
+  today:'<svg viewBox="0 0 24 24"><rect x="3.5" y="5" width="17" height="15" rx="2"/><path d="M3.5 9.5h17M8 3v4M16 3v4"/></svg>',
+  gym:'<svg viewBox="0 0 24 24"><path d="M6.5 7v10M17.5 7v10M3.5 9.5v5M20.5 9.5v5M6.5 12h11"/></svg>',
+  climb:'<svg viewBox="0 0 24 24"><path d="M3 20h4v-4h4v-4h4V8h4V4"/></svg>',
+  food:'<svg viewBox="0 0 24 24"><path d="M7 3v8M5 3v5a2 2 0 0 0 4 0V3M7 11v10M16 3c-2 1.5-3 4-3 7h3v11"/></svg>',
+  body:'<svg viewBox="0 0 24 24"><path d="M4 8h16v8H4z"/><path d="M8 8v3M12 8v4M16 8v3"/></svg>',
+  progress:'<svg viewBox="0 0 24 24"><path d="M4 19h16"/><path d="M5 15l4-5 4 3 6-7"/></svg>'
+};
+const TABS = [['today','Сегодня'],['gym','Зал'],['climb','Лестница'],['food','Еда'],['body','Замеры'],['progress','Прогресс']];
+function renderTabs(){
+  const nav = $('#tabs'); nav.replaceChildren(...TABS.map(([k,l]) => { const a = h('a',{href:'#'+k, 'aria-current': S.view===k ? 'page' : null}); a.innerHTML = ICONS[k]; a.append(h('span',{}, l)); return a; }));
+}
+
+/* Today */
+function vToday(){
+  const date = S.viewDate, d = dayDoc(date), save = k => v => saveDay(date, k, v);
+  const st = stageInfo(date), sug = suggestion(date), SG = STAGES[st.stage], c = cfg();
+  const aw = activeWorkout(), ac = activeClimb();
+  const plan = card(h('div',{class:'row between'}, h('h2',{}, 'План на день'), h('span',{class:'phase'}, st.started ? SG.name : 'не начат')),
+    st.none ? h('div',{class:'note'}, 'План ещё не начат. Отсчёт недель пойдёт с первой записи: веса, тренировки, подъёма или замеров. Начать удобно со стартовых данных в «Замерах» и первой тренировки Ф1.')
+      : h('div',{class:'small muted'}, 'Неделя '+st.week+' · ритм: '+SG.rhythm+'.'),
+    aw ? h('div',{class:'note warn'}, 'Идёт тренировка '+aw.template+'. ', h('a',{href:'#gym'}, 'Продолжить')) :
+    sug.kind==='done' ? h('div',{class:'note good'}, 'Тренировка '+sug.tpl+' сегодня сделана. Следующая по кругу: '+sug.next+'.') :
+    sug.kind==='rest' ? h('div',{class:'note'}, h('b',{}, 'День отдыха'), sug.reason ? ' ('+sug.reason+')' : '', '. Следующая тренировка: '+sug.tpl+' · '+c.program[sug.tpl].name+'. Шаги по цели обязательны, подъём по лестнице можно, если до ног ≥ 48 ч.') :
+    h('div',{class:'note good'}, h('b',{}, 'Тренировка: '+sug.tpl+' · '+c.program[sug.tpl].name), '. '+SG.setsNote+'.'),
+    badRecovery(date) ? h('div',{class:'note warn'}, '3 дня подряд плохой сон или сильный стресс: сегодня RIR +1 и минус последний подход в каждом упражнении. В зале это включится само.') : null,
+    h('div',{class:'row'}, aw ? h('a',{class:'btn primary', href:'#gym'}, 'Открыть тренировку') : sug.kind!=='done' ? h('a',{class:'btn'+(sug.kind==='train'?' primary':''), href:'#gym'}, 'В зал: '+sug.tpl) : null,
+      h('a',{class:'btn', href:'#climb'}, ac ? 'Идёт подъём' : 'Лестница'), h('a',{class:'btn', href:'#food'}, 'Еда')));
+  const ws = weightSignal(date);
+  const morning = card('Утро',
+    h('div',{class:'grid2'}, num('Вес натощак', d.weight, save('weight'), {unit:'кг', id:'d_weight'}), num('Сон', d.sleepH, save('sleepH'), {unit:'ч', id:'d_sleep'})),
+    scale('Качество сна', d.sleepQ, 1, 5, save('sleepQ'), '1 плохо, 5 отлично'),
+    scale('Стресс', d.stress, 1, 5, save('stress'), '1 спокойно, 5 очень высокий'),
+    scale('Энергия', d.energy, 1, 5, save('energy')));
+  const st2 = stepTarget(date);
+  const dayCard = card('За день',
+    h('div',{class:'grid2'}, num('Шаги', d.steps, save('steps'), {int:true, id:'d_steps', ph: st2.n ? String(st2.n) : ''}),
+      h('div',{class:'fld'}, h('span',{class:'fl'}, 'Креатин 5 г'), h('div',{class:'row', style:'min-height:42px'}, tog('выпил', !!d.creatine, v => saveDay(date,'creatine', v || null))))),
+    h('div',{class:'tiny muted'}, 'Шаги: '+st2.text+'.'),
+    text('Заметки', d.notes, save('notes'), {area:true, id:'d_notes', ph:'самочувствие, что мешало, что получилось'}));
+  const wCard = card('Вес',
+    h('div',{class:'kpis'}, stat(ws.a!=null ? fmt(ws.a) : '—', 'среднее 7 дн, кг'), stat(isNum(ws.ch) ? (ws.ch>0?'+':'')+fmt(ws.ch*100,2)+'%' : '—', 'за неделю'),
+      stat(isNum(d.weight) ? fmt(d.weight) : '—', 'сегодня, кг')),
+    h('div',{class:'note '+ws.cls}, ws.text));
+  return frag(dateNav(), plan, morning, dayCard, wCard, remindersCard(date), foodMini(date));
+}
+function remindersCard(date){
+  const items = [];
+  const c = cfg();
+  const b = get('baseline','main');
+  if (!b || !b.done) items.push(h('div',{}, 'Стартовые данные ещё не собраны. ', h('a',{href:'#body'}, 'Заполнить')));
+  const ms = all('measures').sort((a,b) => a._id < b._id ? -1 : 1); const lm = ms[ms.length-1];
+  if (b && b.done && lm){ const due = addDays(lm._id, 14); if (date >= due) items.push(h('div',{}, 'Пора делать замеры (раз в 2 недели, прошлые '+dShort(lm._id)+'). ', h('a',{href:'#body'}, 'Замерить'))); }
+  const cl = doneClimbs(); const lastTest = cl.filter(x => x.type==='Замер').pop();
+  if (!lastTest) items.push(h('div',{}, 'Базовый замер подъёма ещё не сделан. ', h('a',{href:'#climb'}, 'Лестница')));
+  else if (diffDays(date, lastTest.date) >= 28) items.push(h('div',{}, 'Прошло 4 недели с замера подъёма '+dShort(lastTest.date)+', пора повторить. ', h('a',{href:'#climb'}, 'Лестница')));
+  for (const x of cl.slice(-3)){
+    const dd = diffDays(date, x.date);
+    if (dd>=1 && dd<=4 && (x.kneeMorning==null || (dd>=2 && x.doms48==null))) items.push(h('div',{}, 'Подъём '+dShort(x.date)+': допиши колено наутро и крепатуру 24/48 ч. ', h('button',{class:'link', type:'button', onclick: () => { S.openClimb = x._id; location.hash = 'climb'; render(); }}, 'Открыть')));
+  }
+  const blk = Math.floor(stageInfo(date).days/28); if (blk>=1 && stageInfo(date).days%28 < 3) items.push(h('div',{}, 'Конец 4-недельного блока: пришли дневник в проект на разбор (Ещё → Экспорт).'));
+  if (!items.length) return null;
+  return card('Напоминания', h('div',{style:'display:grid;gap:8px', class:'small'}, items));
+}
+function foodMini(date){
+  const d = dayDoc(date), t = cfg().targets;
+  if (!isNum(d.kcal) && !isNum(d.protein)) return card('Еда', h('div',{class:'small muted'}, 'За этот день еда не записана. Цель: '+t.kcal+' ккал, белок '+t.protein[0]+'–'+t.protein[1]+' г.'), h('a',{class:'btn', href:'#food'}, 'Записать еду'));
+  return card('Еда', foodBars(d, t), h('a',{class:'btn', href:'#food'}, 'Открыть'));
+}
+function foodBars(d, t){
+  const row = (label, v, lo, hi, unit) => { const max = (hi||lo)*1.3; const pct = isNum(v) ? Math.min(100, v/max*100) : 0; const inR = isNum(v) && v >= lo*0.95 && v <= (hi||lo)*1.05;
+    return h('div',{class:'barrow'}, h('span',{}, label), h('div',{class:'track'}, h('i',{class: inR ? 'in-range' : '', style:`width:${pct}%`}), h('em',{style:`left:${lo/max*100}%`}), hi ? h('em',{style:`left:${hi/max*100}%`}) : null),
+      h('span',{class:'num'}, isNum(v) ? fmt(v)+' '+unit : '—')); };
+  return h('div',{class:'bars'}, row('Калории', d.kcal, t.kcal, null, ''), row('Белок', d.protein, t.protein[0], t.protein[1], 'г'), row('Жиры', d.fat, t.fat[0], t.fat[1], 'г'),
+    row('Углеводы', d.carbs, t.carbs[0], t.carbs[1], 'г'), row('Клетчатка', d.fiber, t.fiber[0], t.fiber[1], 'г'), row('Вода', d.water, t.water[0], t.water[1], 'л'));
+}
+
+/* Gym */
+function vGym(){
+  const aw = activeWorkout();
+  if (S.openWorkout && get('workouts', S.openWorkout)) return workoutView(S.openWorkout);
+  if (aw){ S.openWorkout = aw._id; return workoutView(aw._id); }
+  const date = S.ui.gymDate || today(); const st = stageInfo(date), sug = suggestion(date), c = cfg();
+  const tpl = S.ui.tpl || (sug.kind==='done' ? sug.next : sug.tpl);
+  const light = S.ui.light!=null ? S.ui.light : badRecovery(date);
+  const deload = !!S.ui.deload;
+  const prog = c.program[tpl];
+  const preview = prog.ex.map((e,i) => { const p = planFor(e, st.stage, deload, light); const hint = hintFor(e.n, p.r1, lastFor(e.n));
+    return h('div',{class:'li', style:'cursor:default;align-items:flex-start'}, h('span',{class:'exn'}, i+1), h('div',{class:'grow'}, h('div',{}, e.n), h('div',{class:'tiny muted'}, p.n+' × '+p.reps+(p.extra?' '+p.extra:'')+' · RIR '+p.rir+' · отдых '+e.rest), h('div',{class:'tiny'}, hint.text))); });
+  const hist = doneWorkouts().slice().reverse().slice(0, 30);
+  return frag(
+    card(h('div',{class:'row between'}, h('h2',{}, 'Новая тренировка'), h('span',{class:'phase'}, STAGES[st.stage].name)),
+      chips(Object.keys(c.program).map(k => [k, k]), tpl, v => { S.ui.tpl = v; render(); }, sug.kind==='done' ? sug.next : sug.tpl),
+      h('div',{class:'small'}, h('b',{}, prog.name), sug.kind==='rest' && tpl===sug.tpl ? h('span',{class:'muted'}, ' · по ритму сегодня отдых, но записать можно') : null),
+      h('div',{class:'row'}, tog('Разгрузка (половина подходов, RIR 4)', deload, v => { S.ui.deload = v; render(); }), tog('Облегчённо (RIR +1, минус подход)', light, v => { S.ui.light = v; render(); })),
+      h('div',{class:'list'}, preview),
+      h('div',{class:'fieldrow'}, h('label',{class:'fld', for:'g_date'}, h('span',{class:'fl'}, 'Дата'), h('span',{class:'fi'}, h('input',{id:'g_date', class:'in', type:'date', value: date, max: today(), onchange: e => { S.ui.gymDate = e.target.value || null; render(); }}))),
+        h('button',{class:'btn primary', type:'button', onclick: () => startWorkout(tpl, date, deload, light)}, 'Начать'))),
+    card('История', hist.length ? h('div',{class:'list'}, hist.map(w => { const n = (w.ex||[]).reduce((s,e) => s + (e.sets||[]).filter(x => x.done).length, 0); const dur = w.finishedAt && w.startedAt ? Math.round((w.finishedAt-w.startedAt)/60000) : null;
+      return h('button',{class:'li', type:'button', onclick: () => { S.openWorkout = w._id; render(); window.scrollTo(0,0); }}, h('span',{class:'pill acc'}, w.template), h('span',{class:'grow'}, dLong(w.date)), h('span',{class:'tiny muted'}, n+' подх.'+(dur?' · '+dur+' мин':''))); }))
+      : h('div',{class:'empty'}, 'Здесь появятся прошедшие тренировки.'))
+  );
+}
+function workoutView(id){
+  const w = get('workouts', id); const editing = w.status==='done';
+  const upd = fn => { const x = clone(get('workouts', id)); fn(x); put('workouts', id, x); };
+  const setRow = (ei, si, s, ex) => {
+    const f = (k, ph, int) => h('span',{class:'fi'}, h('input',{class:'in', id:`w_${id}_${ei}_${si}_${k}`, type:'text', inputmode: int?'numeric':'decimal', autocomplete:'off', 'aria-label':k, value: fmtIn(s[k]), placeholder: ph||'',
+      onchange: e => upd(x => { x.ex[ei].sets[si][k] = parseNum(e.target.value); })}));
+    const e1 = s.done ? e1rm(s.w, s.r, s.rir) : null;
+    return [h('div',{class:'set'}, h('span',{class:'tiny muted'}, si+1), f('w', ''), f('r', ex.plan.reps, true), f('rir', ex.plan.rir, true), f('pain','0',true),
+      h('button',{type:'button', class:'ok'+(s.done?' on':''), 'aria-label': s.done ? 'Отменить подход' : 'Подход сделан', onclick: () => {
+        const nowDone = !s.done;
+        upd(x => { const ss = x.ex[ei].sets[si]; ss.done = nowDone; if (nowDone && ss.w==null){ const prev = x.ex[ei].sets[si-1]; if (prev && prev.w!=null) ss.w = prev.w; } if (nowDone && ss.r==null) ss.r = ex.plan.r1; ss.at = nowDone ? Date.now() : null;
+          if (nowDone){ const nxt = x.ex[ei].sets[si+1]; if (nxt && nxt.w==null) nxt.w = ss.w; } });
+        if (nowDone && !editing) startTimer(ex.plan.rest, ex.n);
+      }}, '✓')),
+      (e1 || (s.pain>=4)) ? h('div',{class:'e1'}, e1 ? 'e1RM ≈ '+fmt(e1)+' кг' : '', s.pain>=4 ? h('span',{style:'color:var(--bad)'}, (e1?' · ':'')+'боль '+s.pain+'/10: останови упражнение и замени вариантом без боли') : '') : null];
+  };
+  const exCards = w.ex.map((ex, ei) => {
+    const last = lastFor(ex.n, id); const hint = hintFor(ex.n, ex.plan.r1, last);
+    const allDone = ex.sets.length && ex.sets.every(s => s.done);
+    return h('div',{class:'ex'+(allDone?' done':'')},
+      h('div',{class:'exhead'}, h('span',{class:'exn'}, ei+1), h('div',{style:'flex:1;min-width:0;display:grid;gap:2px'}, h('h3',{}, ex.n),
+        h('div',{class:'tiny muted'}, ex.plan.sets+' × '+ex.plan.reps+(ex.plan.extra?' '+ex.plan.extra:'')+' · RIR '+ex.plan.rir+' · отдых '+mmss(ex.plan.rest)), h('div',{class:'tiny'}, hint.text)),
+        ex.link ? h('a',{href:ex.link, target:'_blank', rel:'noopener', class:'tiny'}, 'Техника ↗') : null),
+      h('div',{class:'sets'}, h('div',{class:'set'}, h('span',{}), ...['вес, кг','повт.','RIR','боль'].map(t => h('span',{class:'sethead'}, t)), h('span',{})),
+        ex.sets.map((s, si) => setRow(ei, si, s, ex))),
+      h('div',{class:'row'}, h('button',{class:'btn sm', type:'button', onclick: () => upd(x => { const ss = x.ex[ei].sets; const l = ss[ss.length-1]; ss.push({w: l ? l.w : null, r:null, rir:null, pain:null, done:false}); })}, '+ подход'),
+        ex.sets.length > 1 ? h('button',{class:'btn sm', type:'button', onclick: () => upd(x => { x.ex[ei].sets.pop(); })}, '− подход') : null,
+        !editing && ex.plan.rest ? h('button',{class:'btn sm', type:'button', onclick: () => startTimer(ex.plan.rest, ex.n)}, 'Таймер '+mmss(ex.plan.rest)) : null));
+  });
+  const doneSets = w.ex.reduce((s,e) => s + e.sets.filter(x => x.done).length, 0), totalSets = w.ex.reduce((s,e) => s + e.sets.length, 0);
+  const tonnage = w.ex.reduce((s,e) => s + e.sets.filter(x => x.done && isNum(x.w) && isNum(x.r)).reduce((a,x) => a + x.w*x.r, 0), 0);
+  const head = card(h('div',{class:'row between'}, h('h2',{}, w.template+' · '+(cfg().program[w.template]||{name:''}).name), h('span',{class:'pill'+(editing?'':' acc')}, editing ? 'завершена' : 'идёт')),
+    h('div',{class:'small muted'}, dLong(w.date)+' · '+STAGES[w.stage].name+(w.deload?' · разгрузка':'')+(w.light?' · облегчённо':'')),
+    h('div',{class:'kpis'}, stat(doneSets+'/'+totalSets, 'подходов'), stat(fmt(tonnage/1000,2)+' т', 'тоннаж'), stat(w.startedAt ? (editing && w.finishedAt ? Math.round((w.finishedAt-w.startedAt)/60000) : Math.round((Date.now()-w.startedAt)/60000))+' мин' : '—', 'длительность')),
+    h('div',{class:'tiny muted'}, 'В каждом подходе: вес, повторы, RIR (сколько повторов оставалось в запасе), боль 0–10. Нажми ✓, и запустится таймер отдыха. Разминочные подходы не записывай.'),
+    editing ? h('button',{class:'btn', type:'button', onclick: () => { S.openWorkout = null; render(); }}, '← К списку') : null);
+  const prs = editing ? w.ex.map(e => { const b = bestE1(e); if (!b) return null; const prevBest = doneWorkouts().filter(x => x._id!==id && x.date <= w.date).flatMap(x => (x.ex||[]).filter(y => y.n===e.n).map(bestE1)).filter(Boolean); const pb = prevBest.length ? Math.max(...prevBest) : null; return h('tr',{}, h('td',{}, e.n), h('td',{}, fmt(b)), h('td',{}, pb ? (b>pb ? h('span',{class:'pill good'}, '+'+fmt(b-pb)) : fmt(b-pb)) : 'первый раз')); }).filter(Boolean) : [];
+  const foot = card(null, text('Заметки к тренировке', w.notes, v => upd(x => { x.notes = v || ''; }), {area:true, id:'w_notes_'+id, ph:'самочувствие, что заменил, что болело'}),
+    editing ? (prs.length ? h('div',{class:'tbl'}, h('table',{}, h('thead',{}, h('tr',{}, h('th',{}, 'Упражнение'), h('th',{}, 'e1RM, кг'), h('th',{}, 'к лучшему'))), h('tbody',{}, prs))) : null)
+      : h('button',{class:'btn primary big', type:'button', onclick: () => { upd(x => { x.status = 'done'; x.finishedAt = Date.now(); }); stopTimer(); wake(false); }}, 'Завершить тренировку'),
+    h('div',{class:'row'}, confirmBtn(editing ? 'Удалить тренировку' : 'Отменить и удалить', () => { del('workouts', id); S.openWorkout = null; stopTimer(); wake(false); })));
+  return frag(head, ...exCards, foot);
+}
+
+/* Climb */
+function vClimb(){
+  const ac = activeClimb();
+  if (ac) return ac.status==='active' ? climbLive(ac) : climbForm(ac._id);
+  if (S.openClimb && get('climbs', S.openClimb)) return climbForm(S.openClimb);
+  const c = cfg(), r = c.route, elev = routeElev();
+  const cl = doneClimbs(); const lastTest = cl.filter(x => x.type==='Замер').pop();
+  const sugType = (!lastTest || diffDays(today(), lastTest.date) >= 28) ? 'Замер' : 'Тренировка';
+  const type = S.ui.ctype || sugType;
+  const d = dayDoc(today());
+  const pre = S.ui.cpre || (S.ui.cpre = {weight: d.weight ?? null, sleepQ: d.sleepQ ?? null, ascents:1});
+  const show = k => climbShow(k, type);
+  const tmr = suggestion(addDays(today(),1));
+  const legWarn = tmr.kind==='train' && ['Ф1','Ф2','B'].includes(tmr.tpl) ? h('div',{class:'note warn'}, 'Завтра по плану '+tmr.tpl+' с приседом или румынской тягой. До неё меньше 48 ч: лучше перенести подъём или сдвинуть тренировку.') : h('div',{class:'tiny muted'}, 'Подъём в день отдыха, минимум за 48 ч до тренировки с приседом или румынской тягой.');
+  const weekClimbs = cl.filter(x => diffDays(today(), x.date) < 7 && x.type!=='Замер').length;
+  return frag(
+    !isNum(elev) ? routeCard(true) : null,
+    card(h('div',{class:'row between'}, h('h2',{}, 'Новый подъём'), isNum(elev) ? h('span',{class:'pill'}, 'набор '+fmt(elev)+' м') : null),
+      chips([['Замер','Замер (стандарт, раз в 4 недели)'],['Тренировка','Тренировка']], type, v => { S.ui.ctype = v; render(); }, sugType),
+      type==='Замер' ? h('div',{class:'tiny muted'}, 'Замер всегда по стандарту: тот же маршрут и время суток, полный пульс восстановления, все поля.') : weekClimbs>=1 ? h('div',{class:'note warn'}, 'На этой неделе уже был подъём. До базового замера и 2–3 чистых сессий: не чаще 1 раза в неделю.') : null,
+      legWarn,
+      h('div',{class:'grid2'}, num('Вес утром', pre.weight, v => { pre.weight = v; }, {unit:'кг', id:'c_w'}), num('Подъёмов за сессию', pre.ascents, v => { pre.ascents = v || 1; }, {int:true, id:'c_asc'})),
+      show('sleepQ') ? scale('Сон прошлой ночью', pre.sleepQ, 1, 5, v => { pre.sleepQ = v; render(); }) : null,
+      show('weather') ? text('Погода', pre.weather, v => { pre.weather = v; }, {id:'c_weather', ph:'+12, сухо'}) : null,
+      show('plan') ? h('div',{class:'grid2'}, num('Отрезок по плану', pre.planSeg, v => { pre.planSeg = v; }, {unit:'мин', id:'c_seg'}), num('Пауза по плану', pre.planPause, v => { pre.planPause = v; }, {unit:'с', id:'c_pause'})) : null,
+      show('hrStart') ? num('Пульс на старте (после 3–5 мин покоя)', pre.hrStart, v => { pre.hrStart = v; }, {unit:'уд/мин', id:'c_hr0', int:true}) : null,
+      h('button',{class:'btn primary big', type:'button', onclick: () => { const id = today()+'-'+rid(); put('climbs', id, {date: today(), type, status:'active', startedAt: Date.now(), weight: pre.weight, ascents: pre.ascents||1, sleepQ: pre.sleepQ, weather: pre.weather, planSeg: pre.planSeg, planPause: pre.planPause, elev: routeElev(), hr:{start: pre.hrStart}, stops:[], marks:[]}); S.ui.cpre = null; wake(true); }}, 'Старт секундомера'),
+      h('button',{class:'btn', type:'button', onclick: () => { const id = today()+'-'+rid(); put('climbs', id, {date: today(), type, status:'post', manualEntry:true, weight: pre.weight, ascents: pre.ascents||1, sleepQ: pre.sleepQ, weather: pre.weather, planSeg: pre.planSeg, planPause: pre.planPause, elev: routeElev(), hr:{start: pre.hrStart}, stops:[], marks:[], manual:{}}); S.ui.cpre = null; }}, 'Записать подъём без секундомера')),
+    climbHistory(cl),
+    horizonsCard(cl),
+    isNum(elev) ? routeCard(false) : null
+  );
+}
+function climbShow(k, type){ const t = cfg().climbTracked; if (type==='Замер' || !t) return true; return t.includes(k); }
+function routeCard(open){
+  const r = cfg().route; const sv = k => v => saveCfg({route: {...cfg().route, [k]: v}});
+  const body = [
+    text('Название / где', r.name, sv('name'), {id:'r_name', ph:'лестница на гору, старт у …'}),
+    h('div',{class:'grid2'}, num('Ступеней всего', r.steps, sv('steps'), {int:true, id:'r_steps'}), num('Высота ступени', r.stepCm, sv('stepCm'), {unit:'см', id:'r_cm'})),
+    h('div',{class:'tiny muted'}, 'Ступени считай один раз в лёгкий день, порциями между ориентирами. Высоту замерь рулеткой на 3–5 ступенях и возьми среднее.'),
+    h('div',{class:'grid2'}, num('Набор по трекеру', r.trackerElev, sv('trackerElev'), {unit:'м', id:'r_te'}), num('Длина вверх', r.length, sv('length'), {unit:'м', id:'r_len'})),
+    h('div',{class:'fld'}, h('span',{class:'fl'}, 'Пологий спуск или транспорт вниз'), chips(['да','нет'], r.easyDown, sv('easyDown'))),
+    h('div',{class:'fld'}, h('span',{class:'fl'}, 'Перила'), chips(['по всей длине','частично','нет'], r.rails, sv('rails'))),
+    text('Ориентиры по порядку (через запятую)', (r.marks||[]).join(', '), v => saveCfg({route: {...cfg().route, marks: v ? v.split(',').map(s => s.trim()).filter(Boolean) : []}}), {id:'r_marks', ph:'площадка, беседка, поворот, …'}),
+    h('div',{class:'small'}, 'Набор высоты для расчётов: ', h('b',{}, isNum(routeElev()) ? fmt(routeElev())+' м' : 'пока нет'), ' (по ступеням, иначе по трекеру).')
+  ];
+  if (open) return card('Маршрут: заполни один раз', ...body);
+  return h('details',{class:'card'}, h('summary',{}, 'Маршрут: '+(r.name || 'без названия')+' · '+(r.steps ? r.steps+' ступ.' : '')), ...body);
+}
+function climbLive(c){
+  const id = c._id; const marks = cfg().route.marks || [];
+  const upd = fn => { const x = clone(get('climbs', id)); fn(x); put('climbs', id, x); };
+  const open = (c.stops||[]).find(s => !s.end);
+  const clk = h('div',{class:'clock'+(open?' paused':''), id:'clk'}, '0:00');
+  const sub = h('div',{class:'small muted', id:'clksub', style:'text-align:center'});
+  const updClock = () => {
+    const x = get('climbs', id); if (!x || x.status!=='active'){ clearInterval(S.clkTimer); return; }
+    const now = Date.now(); const tot = (now - x.startedAt)/1000;
+    const pauses = (x.stops||[]).reduce((s,p) => s + ((p.end||now) - p.start)/1000, 0);
+    const op = (x.stops||[]).find(s => !s.end);
+    const e1 = document.getElementById('clk'), e2 = document.getElementById('clksub'); if (!e1) return;
+    if (op){ e1.textContent = mmss((now-op.start)/1000); e2.textContent = 'Пауза · всего '+hmmss(tot)+' · в движении '+hmmss(tot-pauses); }
+    else { e1.textContent = hmmss(tot); let t = 'в движении '+hmmss(tot-pauses)+' · остановок '+(x.stops||[]).length;
+      if (isNum(x.planSeg)){ const lastEnd = (x.stops||[]).length ? x.stops[x.stops.length-1].end : x.startedAt; const left = x.planSeg*60 - (now-lastEnd)/1000; t += left>0 ? ' · до плановой паузы '+mmss(left) : ' · время плановой паузы'; }
+      e2.textContent = t; }
+  };
+  clearInterval(S.clkTimer); S.clkTimer = setInterval(updClock, 500); setTimeout(updClock, 0);
+  const nextMark = (c.marks||[]).length;
+  let controls;
+  if (open){
+    const si = c.stops.length-1;
+    controls = [h('div',{class:'fld'}, h('span',{class:'fl'}, 'Почему остановился'), chips(STOP_REASONS, open.reason, v => upd(x => { x.stops[si].reason = v; }))),
+      h('div',{class:'fld'}, h('span',{class:'fl'}, 'Остановка'), chips(['вынужденная','плановая'], open.kind || 'вынужденная', v => upd(x => { x.stops[si].kind = v; }))),
+      h('button',{class:'btn primary big', type:'button', onclick: () => upd(x => { x.stops[si].end = Date.now(); if (!x.stops[si].kind) x.stops[si].kind = 'вынужденная'; })}, 'Пошёл дальше')];
+  } else {
+    controls = [h('button',{class:'btn primary big', type:'button', style:'padding:22px', onclick: () => upd(x => { x.stops.push({start: Date.now(), kind: isNum(x.planSeg) ? 'плановая' : null, mark: (x.marks||[]).length}); })}, 'Остановка'),
+      h('div',{class:'grid2'}, h('button',{class:'btn', type:'button', onclick: () => upd(x => { x.marks = x.marks || []; x.marks.push({at: Date.now(), n: x.marks.length+1}); })}, 'Ориентир '+(nextMark+1)+(marks[nextMark] ? ': '+marks[nextMark] : '')),
+        h('button',{class:'btn', type:'button', onclick: () => { upd(x => { x.finishedAt = Date.now(); x.status = 'post'; }); clearInterval(S.clkTimer); }}, 'Финиш наверху'))];
+  }
+  return frag(card(h('div',{class:'row between'}, h('h2',{}, 'Подъём · '+c.type), h('span',{class:'pill acc'}, 'идёт')), clk, sub, ...controls,
+      (c.marks||[]).length ? h('div',{class:'tiny muted'}, 'Ориентиры: '+c.marks.map(m => m.n+' на '+mmss((m.at-c.startedAt)/1000)).join(', ')) : null,
+      h('div',{class:'tiny muted'}, 'Стоп-сигналы: боль или давление в груди, предобморок, перебои сердца, одышка дольше 5 минут после остановки. Прекращай и к врачу.'),
+      h('div',{class:'row'}, confirmBtn('Отменить подъём', () => { del('climbs', id); clearInterval(S.clkTimer); wake(false); }))));
+}
+function climbForm(id){
+  const c = get('climbs', id); const post = c.status==='post'; const calc = climbCalc(c); const type = c.type;
+  const show = k => climbShow(k, type);
+  const upd = fn => { const x = clone(get('climbs', id)); fn(x); put('climbs', id, x); };
+  const sv = k => v => upd(x => { x[k] = v; });
+  const svHr = k => v => upd(x => { x.hr = x.hr || {}; x.hr[k] = v; });
+  const svM = k => v => upd(x => { x.manual = x.manual || {}; x.manual[k] = v; });
+  const hr = c.hr || {};
+  let recov = null;
+  if (show('hrRec') && c.finishedAt && post){
+    const el = h('div',{class:'tiny', id:'hrcd'});
+    const upd2 = () => { const e = document.getElementById('hrcd'); if (!e){ clearInterval(S.hrTimer); return; } const s = (Date.now()-c.finishedAt)/1000; const nxt = [60,120,180,300].find(t => t > s - 10);
+      e.textContent = nxt ? (s < nxt ? 'Следующий замер пульса (+'+(nxt/60)+' мин) через '+mmss(nxt-s) : 'Сейчас: пульс +'+(nxt/60)+' мин') : 'Пульс восстановления: все замеры прошли.'; };
+    clearInterval(S.hrTimer); S.hrTimer = setInterval(upd2, 500); setTimeout(upd2, 0);
+    recov = el;
+  }
+  const kpis = h('div',{class:'kpis'}, stat(calc.total!=null ? fmt(calc.total) : '—', 'мин полное'), stat(calc.vspeed!=null ? fmt(calc.vspeed,2) : '—', 'м/мин вверх'), stat(String(calc.stops), 'остановок'));
+  return frag(
+    card(h('div',{class:'row between'}, h('h2',{}, 'Подъём · '+type), post ? h('span',{class:'pill acc'}, 'после финиша') : pillSignal(calc.signal)),
+      h('div',{class:'small muted'}, dLong(c.date)), kpis,
+      c.manualEntry ? h('div',{class:'grid2'}, num('Время полное', c.manual?.totalMin, svM('totalMin'), {unit:'мин', id:'m_tot'}), num('Время движения', c.manual?.movingMin, svM('movingMin'), {unit:'мин', id:'m_mov'}),
+        num('Остановок всего', c.manual?.stops, svM('stops'), {int:true, id:'m_st'}), num('Из них вынужденных', c.manual?.forced, svM('forced'), {int:true, id:'m_f'})) : null,
+      !post ? h('div',{class:'grid3 small'}, kv('В движении', calc.moving!=null ? fmt(calc.moving)+' мин' : '—'), kv('Плотность', calc.density!=null ? Math.round(calc.density*100)+'%' : '—'), kv('Отрезок', calc.seg!=null ? fmt(calc.seg)+' мин' : '—'),
+        kv('Пауза ср.', calc.pause!=null ? Math.round(calc.pause)+' с' : '—'), kv('Мощность', calc.power!=null ? Math.round(calc.power)+' Вт' : '—'), kv('Пульс −1 мин', calc.hrDrop!=null ? calc.hrDrop : '—')) : null),
+    show('hrRec') ? card('Пульс', recov, h('div',{class:'grid3'}, show('hrStart') ? num('Старт', hr.start, svHr('start'), {int:true, id:'h_s'}) : null, num('Финиш', hr.finish, svHr('finish'), {int:true, id:'h_f'}), num('+1 мин', hr.p1, svHr('p1'), {int:true, id:'h_1'}),
+      num('+2 мин', hr.p2, svHr('p2'), {int:true, id:'h_2'}), num('+3 мин', hr.p3, svHr('p3'), {int:true, id:'h_3'}), num('+5 мин', hr.p5, svHr('p5'), {int:true, id:'h_5'})),
+      h('div',{class:'tiny muted'}, 'Меряй стоя или сидя, без ходьбы, всегда одинаково. Нет пульсометра: оставь пустым.'))
+      : card('Пульс', h('div',{class:'grid2'}, num('Финиш', hr.finish, svHr('finish'), {int:true, id:'h_f'}), num('+1 мин', hr.p1, svHr('p1'), {int:true, id:'h_1'}))),
+    card('Ощущения', scale('Тяжесть (RPE)', c.rpe, 0, 10, sv('rpe')), show('breath') ? scale('Дыхание', c.breath, 0, 10, sv('breath')) : null, show('legs') ? scale('Ноги', c.legs, 0, 10, sv('legs')) : null,
+      scale('Колено на подъёме', c.kneeUp, 0, 10, sv('kneeUp')), show('descent') ? num('Спуск', c.descentMin, sv('descentMin'), {unit:'мин', id:'c_desc'}) : null, scale('Колено на спуске', c.kneeDown, 0, 10, sv('kneeDown')),
+      show('feel') ? text('Самочувствие через 15 мин', c.feel, sv('feel'), {id:'c_feel'}) : null),
+    card('На следующий день', h('div',{class:'tiny muted'}, 'Допиши сюда завтра и послезавтра. От этого зависит сигнал: «Можно повышать» два раза подряд, тогда повышаем одну переменную.'),
+      scale('Колено наутро', c.kneeMorning, 0, 10, sv('kneeMorning')), show('doms') ? scale('Крепатура через 24 ч', c.doms24, 0, 10, sv('doms24')) : null, scale('Крепатура через 48 ч', c.doms48, 0, 10, sv('doms48'))),
+    (c.stops||[]).length && show('marks') ? card('Остановки', h('div',{class:'tbl'}, h('table',{}, h('thead',{}, h('tr',{}, h('th',{}, '№'), h('th',{}, 'с начала'), h('th',{}, 'длит.'), h('th',{}, 'причина'), h('th',{}, 'тип'))),
+      h('tbody',{}, c.stops.map((s,i) => h('tr',{}, h('td',{}, i+1), h('td',{}, mmss((s.start-c.startedAt)/1000)), h('td',{}, s.end ? Math.round((s.end-s.start)/1000)+' с' : '—'), h('td',{}, s.reason||'—'), h('td',{}, s.kind||'—'))))))) : null,
+    card(null, text('Заметки', c.notes, sv('notes'), {area:true, id:'c_notes'}),
+      post ? h('button',{class:'btn primary big', type:'button', onclick: () => { upd(x => { x.status = 'done'; }); clearInterval(S.hrTimer); wake(false); S.openClimb = null; }}, 'Сохранить подъём')
+           : h('button',{class:'btn', type:'button', onclick: () => { S.openClimb = null; render(); }}, '← К списку'),
+      h('div',{class:'row'}, confirmBtn('Удалить подъём', () => { del('climbs', id); S.openClimb = null; wake(false); }))));
+}
+function kv(k, v){ return h('div',{class:'stat'}, h('span',{}, k), h('b',{style:'font-size:18px'}, v)); }
+function climbHistory(cl){
+  if (!cl.length) return card('Подъёмы', h('div',{class:'empty'}, 'Первый подъём будет базовым замером: от него считаем стартовую дозу.'));
+  return card('Подъёмы', h('div',{class:'list'}, cl.slice().reverse().map(c => { const k = climbCalc(c);
+    return h('button',{class:'li', type:'button', onclick: () => { S.openClimb = c._id; render(); window.scrollTo(0,0); }}, h('span',{class:'pill'+(c.type==='Замер'?' acc':'')}, c.type), h('span',{class:'grow'}, dShort(c.date), h('span',{class:'tiny muted'}, ' · '+(k.total!=null?fmt(k.total)+' мин':'')+' · '+k.stops+' ост.'+(k.vspeed!=null?' · '+fmt(k.vspeed,2)+' м/мин':''))), pillSignal(k.signal)); })));
+}
+function horizonsCard(cl){
+  const real = cl; const tests = real.filter(c => c.type==='Замер'); const trains = real.filter(c => c.type==='Тренировка');
+  const base = tests[0]; const bk = base ? climbCalc(base) : null;
+  const lastTr = trains.slice(-4); const noReduce4 = lastTr.length===4 && lastTr.every(c => climbCalc(c).signal!=='Снизить');
+  const last3 = trains.slice(-3); const noForced3 = last3.length===3 && last3.every(c => climbCalc(c).forced===0);
+  const nonstop = real.some(c => climbCalc(c).stops===0);
+  const rows = [
+    ['0. Базовый замер','ближайший подходящий день', base && isNum(routeElev()), base ? 'замер '+dShort(base.date) : 'нет замера'],
+    ['1. Привыкание, 4 недели','~ конец ноября 2026', noReduce4 && tests.length>=2 && climbCalc(tests[tests.length-1]).total < (bk?.total||0), trains.length+' трен., без «Снизить» подряд: '+(noReduce4?'4':'—')],
+    ['2. Плановые паузы, 12 недель','~ конец января 2027', noForced3, '0 вынужденных 3 раза подряд: '+(noForced3?'да':'нет')],
+    ['3. Сплошной подъём','к весу ~140 кг', nonstop, nonstop ? 'был подъём без остановок' : 'пока с остановками'],
+    ['4. Атлетичная форма','ниже 140 кг', false, bk?.vspeed ? 'цель: '+fmt(bk.vspeed*2,2)+' м/мин (вдвое выше базовой)' : 'после базового замера']
+  ];
+  return h('details',{class:'card'}, h('summary',{}, 'Горизонты подъёма'), h('div',{class:'list'}, rows.map(r => h('div',{class:'li', style:'cursor:default'}, h('span',{class:'pill '+(r[2]?'good':'')}, r[2]?'да':'нет'), h('div',{class:'grow'}, h('div',{}, r[0]), h('div',{class:'tiny muted'}, r[1]+' · '+r[3]))))),
+    h('div',{class:'tiny muted'}, 'Сроки предварительные, после базового замера пересматриваем по твоим цифрам.'));
+}
+
+/* Food */
+/* Meals: free-text dishes, counted by Claude when online; offline entries wait in the day doc */
+const MEAL_KEYS = ['kcal','protein','fat','carbs','fiber'];
+let samplePromise = null;
+const getSample = () => { if (!samplePromise) samplePromise = (window.claude && window.claude.use) ? window.claude.use('sample').catch(() => null) : Promise.resolve(null); return samplePromise; };
+const STOP_CODES = ['not_granted','sampling_disabled','not_declared','capability_disabled','capability_removed','rate_limited','session_expired'];
+function recomputeMeals(x){
+  if (!(x.meals||[]).length){ delete x.meals; return x; }
+  const done = x.meals.filter(m => m.status==='done');
+  for (const k of MEAL_KEYS){ if (done.length) x[k] = Math.round(done.reduce((s,m) => s + (isNum(m[k]) ? m[k] : 0), 0)); else delete x[k]; }
+  return x;
+}
+function addMeal(date, txt){ const x = clone(get('days',date) || {date}); x.date = date; x.meals = x.meals || []; x.meals.push({id: rid(), text: txt, at: Date.now(), status:'pending'}); put('days', date, recomputeMeals(x)); processMeals(); }
+function updMeal(date, id, patch){ const x = clone(get('days',date)); if (!x) return; const m = (x.meals||[]).find(m => m.id===id); if (!m) return; Object.assign(m, patch); put('days', date, recomputeMeals(x)); }
+function delMeal(date, id){ const x = clone(get('days',date)); if (!x) return; x.meals = (x.meals||[]).filter(m => m.id!==id); if (!x.meals.length) for (const k of MEAL_KEYS) delete x[k]; put('days', date, recomputeMeals(x)); }
+const mealPrompt = t => `Посчитай калорийность и БЖУ того, что съел человек. Его запись, как он её написал: «${t}».
+Правила: раздели запись на отдельные продукты или блюда. Если вес или объём указан, используй его. Если не указан, возьми обычную порцию для взрослого мужчины и поставь "assumed": true. Вес считай в готовом виде, если не сказано «сырой» или «сухой». Бери средние значения из таблиц состава продуктов (USDA, справочники состава российских продуктов), для готовых блюд типичный рецепт. Округляй до целых.
+Ответь только JSON такого вида:
+{"items":[{"name":"гречка варёная","grams":250,"kcal":275,"protein":10,"fat":3,"carbs":53,"fiber":7,"assumed":false}],"note":"одна короткая фраза о допущениях или пустая строка"}`;
+async function processMeals(){
+  if (S.processing) return;
+  const sample = await getSample();
+  if (!sample){ S.sampleState = 'none'; scheduleRender(); return; }
+  if (navigator.onLine===false || S.sampleBlocked) return;
+  S.processing = true;
+  try {
+    for (;;){
+      let job = null;
+      for (const [date, d] of Object.entries(S.cache.days)){ const m = (d.meals||[]).find(m => m.status==='pending' && !S.calc.has(m.id)); if (m){ job = {date, m}; break; } }
+      if (!job) break;
+      S.calc.add(job.m.id); scheduleRender();
+      try {
+        const r = await sample.json(mealPrompt(job.m.text), {modelTier:'default'});
+        const items = (r && Array.isArray(r.items) ? r.items : []).map(i => ({name: String(i.name||'').slice(0,80), grams: Number(i.grams)||null, kcal: Number(i.kcal)||0, protein: Number(i.protein)||0, fat: Number(i.fat)||0, carbs: Number(i.carbs)||0, fiber: Number(i.fiber)||0, assumed: !!i.assumed}));
+        if (!items.length) throw {code:'empty_completion'};
+        const sum = k => Math.round(items.reduce((a,i) => a + i[k], 0));
+        updMeal(job.date, job.m.id, {status:'done', items, kcal: sum('kcal'), protein: sum('protein'), fat: sum('fat'), carbs: sum('carbs'), fiber: sum('fiber'), note: r.note ? String(r.note).slice(0,200) : null, err: null, edited: false});
+      } catch(e){
+        const code = (e && e.code) || 'upstream_error';
+        if (code==='upstream_error' && navigator.onLine===false) break;
+        updMeal(job.date, job.m.id, {status:'error', err: code});
+        if (STOP_CODES.includes(code)){ S.sampleBlocked = code; break; }
+      } finally { S.calc.delete(job.m.id); }
+    }
+  } finally { S.processing = false; scheduleRender(); }
+}
+window.addEventListener('online', () => { S.sampleBlocked = S.sampleBlocked==='rate_limited' ? null : S.sampleBlocked; processMeals(); });
+const ERR_TEXT = {not_granted:'подсчёт не разрешён для этой страницы', sampling_disabled:'подсчёт недоступен для аккаунта', rate_limited:'слишком много запросов, попробуй позже', session_expired:'нужно заново войти в Claude', refused:'не получилось разобрать запись, перепиши проще', empty_completion:'не получилось разобрать запись, перепиши проще', invalid_json:'ответ не разобрался, попробуй ещё раз', upstream_error:'сбой связи, попробуй ещё раз'};
+function mealRow(date, m){
+  const t = new Date(m.at).toLocaleTimeString('ru-RU',{hour:'2-digit',minute:'2-digit'});
+  const calc = S.calc.has(m.id);
+  const pill = m.status==='done' ? h('span',{class:'pill good'}, m.kcal+' ккал') : calc ? h('span',{class:'pill acc'}, 'считаю…')
+    : m.status==='error' ? h('span',{class:'pill bad'}, 'не посчиталось') : h('span',{class:'pill warn'}, PWA ? 'посчитается в Дневнике' : (S.sampleState==='none' || navigator.onLine===false) ? 'ждёт сети' : 'в очереди');
+  const sv = k => v => updMeal(date, m.id, {[k]: v==null ? 0 : v, edited: true});
+  return h('details',{class:'meal'}, h('summary',{class:'row', style:'gap:8px;align-items:flex-start;list-style:none'}, h('span',{class:'tiny muted', style:'min-width:38px;padding-top:2px'}, t), h('span',{style:'flex:1;min-width:0;overflow-wrap:anywhere'}, m.text), pill),
+    m.status==='done' ? h('div',{class:'small muted'}, 'Б '+m.protein+' · Ж '+m.fat+' · У '+m.carbs+' · клетч. '+m.fiber+(m.edited ? ' · поправлено вручную' : '')) : null,
+    m.status==='error' ? h('div',{class:'note bad small'}, ERR_TEXT[m.err] || 'ошибка подсчёта') : null,
+    m.items && m.items.length ? h('div',{class:'tbl'}, h('table',{}, h('thead',{}, h('tr',{}, ['Продукт','г','ккал','Б','Ж','У'].map(x => h('th',{}, x)))),
+      h('tbody',{}, m.items.map(i => h('tr',{}, h('td',{style:'white-space:normal'}, i.name+(i.assumed ? ' *' : '')), h('td',{}, i.grams ?? '—'), h('td',{}, i.kcal), h('td',{}, i.protein), h('td',{}, i.fat), h('td',{}, i.carbs)))))) : null,
+    m.items && m.items.some(i => i.assumed) ? h('div',{class:'tiny muted'}, '* вес не указан, взята обычная порция') : null,
+    m.note ? h('div',{class:'tiny muted'}, m.note) : null,
+    m.status==='done' ? h('div',{class:'grid3'}, num('ккал', m.kcal, sv('kcal'), {int:true, id:'ml_k_'+m.id}), num('белок', m.protein, sv('protein'), {id:'ml_p_'+m.id}), num('жиры', m.fat, sv('fat'), {id:'ml_f_'+m.id}),
+      num('углеводы', m.carbs, sv('carbs'), {id:'ml_c_'+m.id}), num('клетчатка', m.fiber, sv('fiber'), {id:'ml_fb_'+m.id})) : null,
+    h('div',{class:'row'}, (m.status!=='pending' || S.sampleBlocked) && !calc ? h('button',{class:'btn sm', type:'button', onclick: () => { S.sampleBlocked = null; updMeal(date, m.id, {status:'pending', err:null}); processMeals(); }}, 'Посчитать заново') : null,
+      confirmBtn('Удалить', () => delMeal(date, m.id))));
+}
+function vFood(){
+  const date = S.viewDate, d = dayDoc(date), t = cfg().targets, sv = k => v => saveDay(date, k, v);
+  const last7 = range(0,6).map(i => dayDoc(addDays(date,-i)));
+  const a = k => { const v = last7.map(x => x[k]).filter(isNum); return v.length ? avg(v) : null; };
+  const days14 = range(0,13).map(i => addDays(date,-i)).filter(x => isNum(dayDoc(x).kcal) || isNum(dayDoc(x).protein));
+  const meals = (d.meals||[]).slice().sort((x,y) => x.at-y.at);
+  const pend = meals.filter(m => m.status!=='done').length;
+  const add = () => { const el = $('#meal_in'); const v = el.value.trim(); if (!v) return; el.value = ''; addMeal(date, v); };
+  return frag(dateNav(),
+    card('Что съел', h('div',{class:'tiny muted'}, 'Пиши как есть: «гречка 250 г, куриная грудка 200 г, огурец» или «2 яйца и бутерброд с сыром». Калории и БЖУ посчитаются сами, когда есть интернет. Без сети запись сохранится и посчитается позже.'+(PWA ? ' В офлайн-версии подсчёт идёт после переноса в Дневник.' : '')),
+      h('label',{class:'fld', for:'meal_in'}, h('span',{class:'fi'}, h('textarea',{id:'meal_in', class:'in', placeholder:'что и сколько', onkeydown: e => { if (e.key==='Enter' && (e.ctrlKey || e.metaKey)){ e.preventDefault(); add(); } }}))),
+      h('button',{class:'btn primary', type:'button', onclick: add}, 'Добавить'),
+      S.sampleBlocked==='not_granted' ? h('div',{class:'note warn small'}, 'Подсчёт калорий не разрешён для этой страницы. Разреши его в меню страницы (Разрешения) и нажми «Посчитать заново».') : null,
+      meals.length ? h('div',{style:'display:grid;gap:10px'}, meals.map(m => mealRow(date, m))) : null),
+    card('Итог дня', meals.length ? h('div',{class:'tiny muted'}, 'Сумма посчитанных блюд'+(pend ? ', ещё '+pend+' ждут подсчёта' : '')+'.') : h('div',{class:'tiny muted'}, 'Нет блюд за день. Можно ввести итоги из другого приложения вручную.'),
+      meals.length ? null : h('div',{class:'grid2'}, num('Калории', d.kcal, sv('kcal'), {unit:'ккал', int:true, id:'n_kcal', ph:String(t.kcal)}), num('Белок', d.protein, sv('protein'), {unit:'г', id:'n_p', ph:t.protein.join('–')}),
+        num('Жиры', d.fat, sv('fat'), {unit:'г', id:'n_f', ph:t.fat.join('–')}), num('Углеводы', d.carbs, sv('carbs'), {unit:'г', id:'n_c', ph:t.carbs.join('–')}),
+        num('Клетчатка', d.fiber, sv('fiber'), {unit:'г', id:'n_fb', ph:t.fiber.join('–')})),
+      h('div',{class:'grid2'}, num('Вода', d.water, sv('water'), {unit:'л', id:'n_w', ph:t.water.join('–').replace(/\./g,',')})),
+      scale('Голод', d.hunger, 1, 5, sv('hunger'), '1 сыт, 5 очень голоден'), foodBars(d, t)),
+    card('Среднее за 7 дней', h('div',{class:'kpis'}, stat(a('kcal')!=null ? Math.round(a('kcal')) : '—', 'ккал'), stat(a('protein')!=null ? Math.round(a('protein')) : '—', 'белок, г'), stat(a('fiber')!=null ? Math.round(a('fiber')) : '—', 'клетчатка, г')),
+      h('div',{class:'tiny muted'}, 'Цели: '+t.kcal+' ккал, белок '+t.protein.join('–')+' г (4–5 приёмов по 40–50 г), жиры '+t.fat.join('–')+' г, углеводы '+t.carbs.join('–')+' г, клетчатка '+t.fiber.join('–')+' г, вода '+t.water.join('–').replace(/\./g,',')+' л. Калории корректируем по тренду веса, а не по одному дню.')),
+    card('Последние 2 недели', days14.length ? h('div',{class:'tbl'}, h('table',{}, h('thead',{}, h('tr',{}, ['Дата','ккал','Б','Ж','У','Клетч.','Вода'].map(x => h('th',{}, x)))),
+      h('tbody',{}, days14.map(x => { const z = dayDoc(x); return h('tr',{}, h('td',{}, h('button',{class:'link', type:'button', onclick: () => { S.viewDate = x; render(); window.scrollTo(0,0); }}, dShort(x))), ...['kcal','protein','fat','carbs','fiber','water'].map(k => h('td',{}, isNum(z[k]) ? fmt(z[k]) : '—'))); }))))
+      : h('div',{class:'empty'}, 'Записей пока нет.')));
+}
+
+/* Body: baseline then tracked measurements */
+function vBody(){
+  const b = get('baseline','main');
+  if (!b || !b.done || S.ui.editBaseline) return baselineView();
+  return measuresView();
+}
+function baselineView(){
+  const b = clone(get('baseline','main')) || {date: today(), values:{}, track: null, climbTrack: null};
+  const c = cfg();
+  b.values = b.values || {};
+  const track = b.track || BODY_FIELDS.filter(f => f[3]).map(f => f[0]).concat(PHOTO_FIELDS.map(f => f[0]));
+  const ctrack = b.climbTrack || CLIMB_OPT.map(f => f[0]);
+  const fresh = () => { const x = clone(get('baseline','main')) || {date: b.date, values:{}}; x.values = x.values || {}; return x; };
+  const save = patch => put('baseline','main', {...fresh(), ...patch});
+  const sv = k => v => { const x = fresh(); if (v==null) delete x.values[k]; else x.values[k] = v; put('baseline','main', x); };
+  const curTrack = () => fresh().track || track;
+  const tk = (k, on) => { const t0 = curTrack(); save({track: on ? Array.from(new Set([...t0, k])) : t0.filter(x => x!==k)}); };
+  const field = f => h('div',{class:'fieldrow'}, num(f[1], b.values[f[0]], sv(f[0]), {unit:f[2], id:'b_'+f[0]}), tog('следить', track.includes(f[0]), on => tk(f[0], on)));
+  const st = c.route;
+  return frag(
+    card(h('div',{class:'row between'}, h('h2',{}, 'Стартовые данные'), b.done ? h('span',{class:'pill good'}, 'собраны '+dShort(b.date)) : h('span',{class:'pill warn'}, 'сбор')),
+      h('div',{class:'small'}, 'Здесь все возможные измерения на старт. Заполни то, что можешь, утром натощак. Галочка «следить» решает, что останется в регулярных замерах раз в 2 недели: остальное запишется один раз и не будет мешать.'),
+      h('label',{class:'fld', for:'b_date'}, h('span',{class:'fl'}, 'Дата сбора'), h('span',{class:'fi'}, h('input',{id:'b_date', class:'in', type:'date', value: b.date, onchange: e => save({date: e.target.value || today()})})))),
+    card('Тело', h('div',{class:'tiny muted'}, 'Сантиметр по коже, без натяжения. Талия по пупку на выдохе. Обхваты рук в напряжении, в самой широкой точке.'), ...BODY_FIELDS.slice(0,16).map(field)),
+    card('Здоровье и режим', ...BODY_FIELDS.slice(16).map(field),
+      h('div',{class:'grid2'}, num('Шаги, среднее за неделю', b.values.stepsAvg, sv('stepsAvg'), {int:true, id:'b_steps'}), num('Сон, среднее', b.values.sleepAvg, sv('sleepAvg'), {unit:'ч', id:'b_sleep'})),
+      scale('Качество сна', b.values.sleepQ, 1, 5, sv('sleepQ')), scale('Стресс', b.values.stress, 1, 5, sv('stress')),
+      text('Анализы и визит к врачу', b.values.doctor, sv('doctor'), {area:true, id:'b_doc', ph:'давление, ЭКГ, кровь, что сказал врач; сомнолог'})),
+    card('Фото', h('div',{class:'tiny muted'}, 'Утром до тренировки, один свет и поза. Фото храни у себя, здесь только отметка.'),
+      ...PHOTO_FIELDS.map(f => h('div',{class:'fieldrow'}, tog(f[1]+' сделано', !!b.values[f[0]], v => sv(f[0])(v || null)), tog('следить', track.includes(f[0]), on => tk(f[0], on))))),
+    routeCard(true),
+    card('Подъём: что записывать дальше', h('div',{class:'small'}, 'Время, остановки, тяжесть и колени записываются всегда. Замер раз в 4 недели всегда идёт с полным набором. Для обычных тренировок на лестнице оставь только нужное:'),
+      ...CLIMB_OPT.map(f => tog(f[1], ctrack.includes(f[0]), on => { const t0 = fresh().climbTrack || ctrack; save({climbTrack: on ? Array.from(new Set([...t0, f[0]])) : t0.filter(x => x!==f[0])}); }))),
+    card('Сила на старте', h('div',{class:'small'}, 'Отдельно ничего вводить не нужно. Первые 2 недели ищем рабочие веса на RIR 4, и приложение само посчитает стартовый e1RM по первым тренировкам. Старые рекорды для справки: жим 140, присед 180, становая 240 кг.')),
+    card(null, b.done ? h('button',{class:'btn', type:'button', onclick: () => { const x = fresh(); S.ui.editBaseline = false; saveCfg({tracked: x.track || track, climbTracked: x.climbTrack || ctrack}); render(); }}, 'Готово, вернуться к замерам')
+      : h('button',{class:'btn primary big', type:'button', onclick: () => {
+          const x = fresh(); const tr = x.track || track, ct = x.climbTrack || ctrack;
+          const vals = {}; for (const f of BODY_FIELDS) if (x.values[f[0]]!=null) vals[f[0]] = x.values[f[0]]; for (const f of PHOTO_FIELDS) if (x.values[f[0]]) vals[f[0]] = true;
+          put('baseline','main', {...x, done:true, track: tr, climbTrack: ct}); saveCfg({tracked: tr, climbTracked: ct});
+          if (Object.keys(vals).length) put('measures', x.date, {...vals, date: x.date, baseline:true});
+          S.ui.editBaseline = false; window.scrollTo(0,0);
+        }}, 'Завершить сбор и оставить только отслеживаемое'),
+      h('div',{class:'tiny muted'}, 'Потом список можно поменять: Замеры → «Стартовые данные».'))
+  );
+}
+function measuresView(){
+  const c = cfg(); const track = c.tracked || BODY_FIELDS.filter(f => f[3]).map(f => f[0]);
+  const date = S.ui.mDate || today();
+  const m = get('measures', date) || {};
+  const showAll = !!S.ui.mAll;
+  const sv = k => v => { const x = clone(get('measures', date) || {date}); if (v==null) delete x[k]; else x[k] = v; put('measures', date, x); };
+  const fields = BODY_FIELDS.filter(f => showAll || track.includes(f[0]));
+  const photos = PHOTO_FIELDS.filter(f => showAll || track.includes(f[0]));
+  const ms = all('measures').sort((a,b) => a._id < b._id ? -1 : 1);
+  const first = ms[0], prev = ms.filter(x => x._id < date).pop();
+  const last = ms[ms.length-1]; const due = last ? addDays(last._id, 14) : today();
+  const histKeys = BODY_FIELDS.filter(f => track.includes(f[0]) && ms.some(x => isNum(x[f[0]])));
+  const ratio = isNum(m.waist) ? m.waist / c.targets.height : null;
+  return frag(
+    card(h('div',{class:'row between'}, h('h2',{}, 'Замеры'), h('span',{class:'pill'+(today()>=due?' warn':'')}, today()>=due ? 'пора замерить' : 'следующие '+dShort(due))),
+      h('label',{class:'fld', for:'m_date'}, h('span',{class:'fl'}, 'Дата'), h('span',{class:'fi'}, h('input',{id:'m_date', class:'in', type:'date', value: date, max: today(), onchange: e => { S.ui.mDate = e.target.value || null; render(); }}))),
+      h('div',{class:'tiny muted'}, 'Раз в 2 недели утром натощак. Вес: возьми среднее за 7 дней из «Сегодня» ('+(avg7(date)!=null ? fmt(avg7(date))+' кг' : 'пока нет')+').'),
+      ...fields.map(f => { const d0 = first && isNum(first[f[0]]) && isNum(m[f[0]]) && first._id!==date ? m[f[0]] - first[f[0]] : null;
+        return h('div',{class:'fieldrow'}, num(f[1], m[f[0]], sv(f[0]), {unit:f[2], id:'m_'+f[0], ph: prev && isNum(prev[f[0]]) ? fmtIn(prev[f[0]]) : ''}), h('span',{class:'tiny muted', style:'padding-bottom:12px;min-width:62px;text-align:right'}, d0!=null ? (d0>0?'+':'')+fmt(d0)+' от старта' : '')); }),
+      photos.length ? h('div',{class:'row'}, photos.map(f => tog(f[1], !!m[f[0]], v => sv(f[0])(v || null)))) : null,
+      ratio ? h('div',{class:'note'}, 'Талия / рост: ', h('b',{}, fmt(ratio,3)), '. Ниже 0,5 хороший ориентир здоровья, атлетичный вид около 0,45 (талия ~88 см).') : null,
+      h('div',{class:'row'}, tog('Показать все поля', showAll, v => { S.ui.mAll = v; render(); }), h('button',{class:'link', type:'button', onclick: () => { S.ui.editBaseline = true; render(); window.scrollTo(0,0); }}, 'Стартовые данные и список полей'))),
+    card('История замеров', ms.length && histKeys.length ? h('div',{class:'tbl'}, h('table',{}, h('thead',{}, h('tr',{}, h('th',{}, 'Поле'), ms.slice(-6).map(x => h('th',{}, dShort(x._id)+(x.baseline?' (старт)':''))))),
+      h('tbody',{}, histKeys.map(f => h('tr',{}, h('td',{}, f[1]), ms.slice(-6).map(x => h('td',{}, isNum(x[f[0]]) ? fmt(x[f[0]]) : '—')))))))
+      : h('div',{class:'empty'}, 'После первых замеров здесь появится таблица.'))
+  );
+}
+
+/* Progress */
+function vProgress(){
+  const c = cfg(); const days = all('days').filter(d => d.date);
+  const wpts = days.filter(d => isNum(d.weight)).map(d => ({x: tms(d.date), y: d.weight}));
+  const apts = days.filter(d => isNum(d.weight)).map(d => ({x: tms(d.date), y: avg7(d.date)})).filter(p => p.y!=null);
+  const ms = all('measures').sort((a,b) => a._id < b._id ? -1 : 1);
+  const waist = ms.filter(m => isNum(m.waist)).map(m => ({x: tms(m._id), y: m.waist}));
+  const ws = doneWorkouts();
+  const lifts = MAIN_LIFTS.filter(n => ws.some(w => (w.ex||[]).some(e => e.n===n && bestE1(e))));
+  const lift = S.ui.lift && lifts.includes(S.ui.lift) ? S.ui.lift : lifts[0];
+  const lpts = lift ? ws.map(w => { const e = (w.ex||[]).find(x => x.n===lift); const b = e ? bestE1(e) : null; return b ? {x: tms(w.date), y: b} : null; }).filter(Boolean) : [];
+  const kc = days.filter(d => isNum(d.kcal)).map(d => ({x: tms(d.date), y: d.kcal}));
+  const pr = days.filter(d => isNum(d.protein)).map(d => ({x: tms(d.date), y: d.protein}));
+  const cl = doneClimbs(); const vs = cl.map(x => ({x: tms(x.date), y: climbCalc(x).vspeed})).filter(p => p.y!=null);
+  const st = cl.map(x => ({x: tms(x.date), y: climbCalc(x).stops}));
+  /* 4-week strength blocks */
+  const start = c.startDate; const blocks = [];
+  if (ws.length && start){ const lastDay = ws[ws.length-1].date; for (let b0 = start; b0 <= lastDay; b0 = addDays(b0, 28)) blocks.push(b0); }
+  const allLifts = MAIN_LIFTS.filter(n => ws.some(w => (w.ex||[]).some(e => e.n===n)));
+  const blockBest = (b0, n) => { const b1 = addDays(b0, 27); const v = ws.filter(w => w.date>=b0 && w.date<=b1).flatMap(w => (w.ex||[]).filter(e => e.n===n).map(bestE1)).filter(Boolean); return v.length ? Math.max(...v) : null; };
+  return frag(
+    card('Вес', lineChart([{name:'утро', pts:wpts, dots:true, color:'var(--muted)'}, {name:'среднее 7 дн', pts:apts, line:true, area:true}], {label:'Вес, кг', empty:'Записывай вес утром в «Сегодня», и здесь появится график со средним за 7 дней.'})),
+    card('Талия', lineChart([{name:'талия', pts:waist, line:true, dots:true}], {label:'Талия, см', refs: waist.length>1 ? [{y: 0.5*c.targets.height, label:'0,5 роста'}] : [], empty:'Талия из замеров раз в 2 недели.'})),
+    card(h('div',{class:'row between'}, h('h2',{}, 'Сила, e1RM'), lifts.length>1 ? h('select',{class:'in', id:'p_lift', style:'width:auto;background:var(--sunk);border:1px solid var(--line);border-radius:8px;padding:6px', onchange: e => { S.ui.lift = e.target.value; render(); }}, lifts.map(n => h('option',{value:n, selected: n===lift}, n))) : null),
+      lift ? h('div',{class:'small muted'}, lift) : null, lineChart([{name:lift||'', pts:lpts, line:true, dots:true}], {label:'e1RM, кг', empty:'Появится после тренировок с записанными подходами.'}),
+      blocks.length && allLifts.length ? h('div',{class:'tbl'}, h('table',{}, h('thead',{}, h('tr',{}, h('th',{}, 'Лучший e1RM за блок'), blocks.map(b0 => h('th',{}, dShort(b0))))),
+        h('tbody',{}, allLifts.map(n => h('tr',{}, h('td',{}, n), blocks.map(b0 => h('td',{}, fmt(blockBest(b0, n))))))))) : null,
+      h('div',{class:'tiny muted'}, 'Блок = 4 недели. В дефиците сила может стоять, тревожный сигнал только падение 2 блока подряд.')),
+    card('Калории и белок', lineChart([{name:'ккал', pts:kc, line:true, dots:true}], {label:'ккал', refs: kc.length>1 ? [{y:c.targets.kcal, label:'цель '+c.targets.kcal}] : [], h:170, empty:'Появится после записей в «Еде».'}),
+      lineChart([{name:'белок', pts:pr, line:true, dots:true, color:'var(--good)'}], {label:'белок, г', refs: pr.length>1 ? [{y:c.targets.protein[0], label:c.targets.protein[0]+' г'}] : [], h:150, empty:' '})),
+    card('Подъём', lineChart([{name:'м/мин', pts:vs, line:true, dots:true}], {label:'вертикальная скорость', h:170, empty:'Вертикальная скорость появится после двух подъёмов.'}),
+      st.length>1 ? lineChart([{name:'остановок', pts:st, line:true, dots:true, color:'var(--warn)'}], {label:'остановки', h:140}) : null)
+  );
+}
+
+/* More */
+function importBlock(label){
+  return h('details',{}, h('summary',{class:'small'}, label),
+    h('textarea',{id:'imp', class:'in', style:'min-height:90px;margin-top:8px;background:var(--sunk);border:1px solid var(--line);border-radius:8px', placeholder:'вставь сюда скопированный текст'}),
+    h('button',{class:'btn sm primary', type:'button', style:'margin-top:8px', onclick: e => { try { const k = importTxt($('#imp').value); $('#imp').value = ''; e.target.textContent = k ? 'Перенесено записей: '+k : 'Новых записей нет'; } catch(err){ e.target.textContent = 'Не получилось: текст не похож на копию дневника'; } }}, 'Перенести'));
+}
+function vMore(){
+  const c = cfg(); const t = c.targets; const st = stageInfo(today());
+  const svT = (k, i) => v => { const t0 = clone(cfg().targets); if (i==null) t0[k] = v; else t0[k][i] = v; saveCfg({targets: t0}); };
+  const n = Object.keys(S.outbox).length;
+  return frag(
+    PWA ? card('Офлайн-версия',
+      h('div',{class:'small'}, 'Эта версия открывается без интернета и хранит записи на телефоне. Калории блюд и разбор прогресса в основном Дневнике, поэтому, когда есть сеть, переноси туда записи.'),
+      h('div',{class:'note small'}, h('b',{}, 'Перенос в Дневник: '), '1) «Скопировать для Дневника». 2) Открой Дневник → Ещё → «Вставить из офлайн-версии». Чтобы здесь были посчитанные калории и история, сделай обратно: в Дневнике «Скопировать для офлайн-версии», здесь «Вставить из Дневника».'),
+      h('div',{class:'row'}, h('button',{class:'btn primary', type:'button', onclick: e => copyOut(e.target, 'Скопировано, вставь в Дневнике')}, 'Скопировать для Дневника'), h('a',{class:'btn', href: DIARY_URL, target:'_blank', rel:'noopener'}, 'Открыть Дневник ↗')),
+      h('textarea',{id:'exp', class:'in', hidden:true, style:'min-height:100px;background:var(--sunk);border:1px solid var(--line);border-radius:8px', readonly:true}),
+      importBlock('Вставить из Дневника'),
+      h('div',{class:'tiny muted'}, 'Не перенесено записей: '+unsentCount()+'. Удаления не переносятся: удалённое здесь удали и в Дневнике.'))
+    : card('Синхронизация и офлайн',
+      h('div',{class:'small'}, S.dbState==='on' ? 'Записи хранятся в облаке и в памяти этого устройства. ' : 'Облачная база сейчас недоступна, записи хранятся только на этом устройстве. ',
+        n ? h('b',{}, 'Ждут отправки: '+n+'. ') : 'Всё отправлено. ', S.lastSync ? 'Последняя отправка: '+new Date(S.lastSync).toLocaleTimeString('ru-RU',{hour:'2-digit',minute:'2-digit'})+'.' : ''),
+      h('div',{class:'note small'}, 'Совсем без интернета работает офлайн-версия с иконкой на телефоне. Записи из неё вставляй сюда, когда есть сеть: калории блюд посчитаются сразу.'),
+      importBlock('Вставить из офлайн-версии'),
+      h('div',{class:'row'}, h('button',{class:'btn', type:'button', onclick: e => copyOut(e.target, 'Скопировано, вставь в офлайн-версии')}, 'Скопировать для офлайн-версии'), h('button',{class:'btn', type:'button', onclick: () => { S.syncErr = null; flush(); }}, 'Отправить сейчас')),
+      h('textarea',{id:'exp', class:'in', hidden:true, style:'min-height:100px;background:var(--sunk);border:1px solid var(--line);border-radius:8px', readonly:true})),
+    card('Старт и этап', h('div',{class:'small'}, c.startDate ? (c.startManual ? 'Старт задан вручную: '+dLong(c.startDate)+'.' : 'Старт по первой записи: '+dLong(c.startDate)+'.') : 'План не начат: отсчёт пойдёт с первой записи.'),
+      h('label',{class:'fld', for:'s_start'}, h('span',{class:'fl'}, 'Задать дату старта вручную'), h('span',{class:'fi'}, h('input',{id:'s_start', class:'in', type:'date', value: c.startManual ? c.startDate : '', onchange: e => saveCfg({startDate: e.target.value || null})}))),
+      c.startManual ? h('button',{class:'btn sm', type:'button', onclick: () => saveCfg({startDate: null})}, 'Считать от первой записи') : null,
+      h('div',{class:'small'}, 'Сейчас: неделя '+st.week+', '+STAGES[st.stage].name+(st.auto?' (по календарю)':' (выбрано вручную)')+'. Переход дальше, только если: '+STAGES[st.stage].next+'.'),
+      h('div',{class:'fld'}, h('span',{class:'fl'}, 'Этап'), chips([['', 'по календарю'], ['1','1'], ['2','2'], ['3','3'], ['4','4']], c.stageOverride ? String(c.stageOverride) : '', v => saveCfg({stageOverride: v || null})))),
+    card('Цели питания', h('div',{class:'grid2'}, num('Калории', t.kcal, svT('kcal'), {unit:'ккал', int:true, id:'t_k'}), num('Рост', t.height, svT('height'), {unit:'см', id:'t_h'}),
+      num('Белок от', t.protein[0], svT('protein',0), {unit:'г', id:'t_p0'}), num('Белок до', t.protein[1], svT('protein',1), {unit:'г', id:'t_p1'}),
+      num('Жиры от', t.fat[0], svT('fat',0), {unit:'г', id:'t_f0'}), num('Жиры до', t.fat[1], svT('fat',1), {unit:'г', id:'t_f1'}),
+      num('Углеводы от', t.carbs[0], svT('carbs',0), {unit:'г', id:'t_c0'}), num('Углеводы до', t.carbs[1], svT('carbs',1), {unit:'г', id:'t_c1'}),
+      num('Клетчатка от', t.fiber[0], svT('fiber',0), {unit:'г', id:'t_fb0'}), num('Клетчатка до', t.fiber[1], svT('fiber',1), {unit:'г', id:'t_fb1'}),
+      num('Вода от', t.water[0], svT('water',0), {unit:'л', id:'t_w0'}), num('Вода до', t.water[1], svT('water',1), {unit:'л', id:'t_w1'}))),
+    h('details',{class:'card'}, h('summary',{}, 'Программа'), ...Object.entries(c.program).map(([k,p]) => h('div',{style:'display:grid;gap:4px'}, h('h3',{}, k+' · '+p.name),
+      h('div',{class:'tbl'}, h('table',{}, h('thead',{}, h('tr',{}, ['Упражнение','Подх. × повт.','RIR','Отдых'].map(x => h('th',{}, x)))), h('tbody',{}, p.ex.map(e => h('tr',{}, h('td',{}, h('a',{href:e.link, target:'_blank', rel:'noopener'}, e.n)), h('td',{}, e.sr), h('td',{}, e.rir), h('td',{}, e.rest))))))))),
+    h('details',{class:'card'}, h('summary',{}, 'Правила корректировки'), h('div',{class:'tbl'}, h('table',{}, h('tbody',{}, RULES.map(r => h('tr',{}, h('td',{style:'white-space:normal;text-align:left'}, r[0]), h('td',{style:'white-space:normal;text-align:left'}, r[1]))))))),
+    !PWA ? card('Разбор', h('div',{class:'small'}, 'Раз в 4 недели я сам читаю записи отсюда, присылать файл не нужно.')) : null,
+    h('div',{class:'tiny muted', style:'padding:0 4px'}, 'Это не медицинская рекомендация. При боли в груди, сильной одышке, головокружении тренировку прекращай и обращайся к врачу.')
+  );
+}
+const RULES = [
+  ['Во всех подходах верх диапазона при заданном RIR','Вес +2,5 кг (жимы, тяги верха), +5 кг (присед, тяги низа), минимальный шаг в изоляции'],
+  ['Повторы растут, верх не достигнут','Тот же вес, добивай повторения'],
+  ['e1RM основного упражнения падает 2 тренировки подряд','Проверь сон, калории, скорость похудения; если всё в норме, разгрузка'],
+  ['Мышца восстанавливается, сила растёт весь цикл','В следующем цикле +1 подход (сначала плечи и руки)'],
+  ['Крепатура держится до следующей тренировки на эту мышцу','−1 подход в упражнениях на неё'],
+  ['Боль в суставе ≥ 4/10 или резкая','Остановить упражнение, заменить; дольше недели идти к врачу'],
+  ['Плохой сон или сильный стресс 3 дня подряд','RIR +1 и минус последний подход в каждом упражнении'],
+  ['Потеря < 0,5%/нед 2 недели подряд и талия стоит','−150–200 ккал или +2000 шагов'],
+  ['Потеря > 1,2%/нед 2 недели подряд (после 3-й недели)','+150–200 ккал'],
+  ['10–12 недель дефицита','1–2 недели на поддержании, тренировки без изменений'],
+  ['Каждые 6–8 недель или по сигналу','Разгрузка: круг A, B, C, половина подходов, те же веса, RIR 4'],
+  ['Вес ниже 140 кг','Добавить кардиотренажёры 2–3 × 30–40 мин в дни отдыха; подтягивания с резиной'],
+  ['Подъём: колено ≥ 3 на подъёме или спуске, ≥ 2 наутро','Сигнал «Снизить»: лёгкий подъём убираем первым'],
+  ['Подъём: «Можно повышать» 2 раза подряд','Повышаем одну переменную: темп и паузы → второй подъём → ступени через одну (≤150 кг) → жилет']
+];
+
+/* ---------- router & render ---------- */
+const VIEWS = {today:vToday, gym:vGym, climb:vClimb, food:vFood, body:vBody, progress:vProgress, more:vMore};
+function route(){ const k = (location.hash||'').slice(1); S.view = VIEWS[k] ? k : 'today'; if (S.view!=='gym') S.openWorkout = activeWorkout() ? activeWorkout()._id : null; render(); }
+function render(){
+  S.pendingRender = false;
+  const app = $('#app');
+  let view;
+  try { view = VIEWS[S.view](); } catch(e){ console.error(e); view = h('div',{class:'note bad'}, 'Ошибка на экране: '+(e && e.message)+'. Записи не потеряны.'); }
+  const y = window.scrollY;
+  app.replaceChildren(view);
+  window.scrollTo(0, y);
+  renderTabs();
+  const st = stageInfo(today());
+  $('#hdrsub').textContent = (st.started ? 'неделя '+st.week+' · этап '+st.stage : st.none ? 'план не начат' : 'старт '+dShort(cfg().startDate)) + ' · ' + dShort(today());
+  $('#morebtn').setAttribute('aria-current', S.view==='more' ? 'page' : 'false');
+}
+const isTyping = () => { const a = document.activeElement; return a && $('#app').contains(a) && /^(INPUT|TEXTAREA|SELECT)$/.test(a.tagName) && a.type!=='checkbox'; };
+function scheduleRender(){ S.pendingRender = true; clearTimeout(S.rt); S.rt = setTimeout(flushRender, 0); }
+function flushRender(){ if (S.pendingRender && !isTyping() && !S.pointerDown) render(); }
+$('#app').addEventListener('focusout', () => { if (S.pendingRender) setTimeout(flushRender, 30); });
+document.addEventListener('pointerdown', () => { S.pointerDown = true; }, true);
+const releasePtr = () => setTimeout(() => { S.pointerDown = false; flushRender(); }, 60);
+document.addEventListener('pointerup', releasePtr, true);
+document.addEventListener('pointercancel', releasePtr, true);
+$('#sync').addEventListener('click', () => { location.hash = 'more'; });
+window.addEventListener('hashchange', () => { route(); window.scrollTo(0,0); });
+document.addEventListener('visibilitychange', () => { if (document.visibilityState==='visible'){ flush(); scheduleRender(); } });
+
+loadLocal();
+if (activeWorkout() || activeClimb()) wantWake = true;
+route(); updateSync(); tick();
+connect().then(() => processMeals());
+if (PWA){ try { navigator.storage && navigator.storage.persist && navigator.storage.persist(); } catch(e){}
+  if ('serviceWorker' in navigator && location.protocol==='https:') navigator.serviceWorker.register('sw.js').catch(() => {}); }
+</script>
