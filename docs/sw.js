@@ -1,5 +1,5 @@
 // Offline cache for the diary PWA. VERSION changes on every build, so a new build replaces the old cache.
-const CACHE = 'rk-e39af808a4';
+const CACHE = 'rk-0fca422170';
 const CORE = ['./', './index.html', './manifest.webmanifest', './icon-192.png', './icon-512.png'];
 
 self.addEventListener('install', e => {

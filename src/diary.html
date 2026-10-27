@@ -32,11 +32,14 @@ button{font:inherit;color:inherit}
   display:flex;align-items:center;gap:10px}
 .brand{font-family:var(--display);font-weight:600;font-size:20px;letter-spacing:.02em;text-transform:uppercase;margin:0;flex:1;min-width:0}
 .brand small{display:block;font-family:var(--body);font-size:12px;font-weight:400;letter-spacing:0;text-transform:none;color:var(--muted)}
-.sync{font-size:12px;padding:4px 9px;border-radius:99px;background:var(--sunk);color:var(--muted);border:1px solid var(--line);white-space:nowrap;cursor:pointer}
-.sync.ok{color:var(--good);background:var(--good-soft);border-color:transparent}
-.sync.wait{color:var(--warn);background:var(--warn-soft);border-color:transparent}
-.sync.err{color:var(--bad);background:var(--bad-soft);border-color:transparent}
-.iconbtn{border:1px solid var(--line);background:var(--sunk);border-radius:8px;padding:6px 10px;cursor:pointer;font-size:13px}
+.sync{flex:none;font-size:12.5px;line-height:1.25;padding:5px 10px;border-radius:9px;background:var(--sunk);color:var(--muted);border:1px solid var(--line);cursor:pointer;text-align:left;display:flex;flex-direction:column;align-items:flex-start;min-width:0}
+.sync b{font-weight:600;white-space:nowrap}
+.sync small{font-size:11px;opacity:.85;white-space:nowrap}
+.sync.s-ok{color:var(--good);background:var(--good-soft);border-color:transparent}
+.sync.s-wait{color:var(--warn);background:var(--warn-soft);border-color:transparent}
+.sync.s-err{color:var(--bad);background:var(--bad-soft);border-color:transparent}
+.iconbtn{border:1px solid var(--line);background:var(--sunk);color:var(--ink);text-decoration:none;border-radius:9px;padding:8px 12px;cursor:pointer;font-size:14px;font-weight:500;white-space:nowrap;flex:none}
+.iconbtn[aria-current="page"]{background:var(--ink);color:var(--surface);border-color:var(--ink)}
 .shell{display:block}
 main{padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:14px 150px;max-width:760px;margin:0 auto;display:grid;gap:14px}
 nav.tabs{position:fixed;left:0;right:0;bottom:0;z-index:6;background:var(--surface);border-top:1px solid var(--line);
@@ -367,13 +370,15 @@ async function copyOut(btn, okText){
 function updateSync(){
   const el = $('#sync'); if (!el) return;
   const n = Object.keys(S.outbox).length;
-  let cls = 'sync', txt;
-  if (PWA){ const k = unsentCount(); el.className = 'sync'+(k?' wait':' ok'); el.textContent = k ? 'Перенести: '+k : 'Всё перенесено'; return; }
-  if (S.dbState==='connecting'){ txt = n ? 'Ждут отправки: '+n : 'Подключаюсь…'; }
-  else if (S.dbState==='none'){ cls += ' wait'; txt = 'Только на устройстве'; }
-  else if (n){ cls += ' wait'; txt = (navigator.onLine===false || S.syncErr) ? 'Офлайн · ждут '+n : 'Отправляю '+n; }
-  else { cls += ' ok'; txt = 'Сохранено'; }
-  el.className = cls; el.textContent = txt;
+  const rec = k => k+' '+plural(k,'запись','записи','записей');
+  let cls = 'sync', top, sub;
+  if (PWA){ const k = unsentCount(); cls += k ? ' s-wait' : ' s-ok'; top = 'Офлайн-версия'; sub = k ? rec(k)+' не в Дневнике' : 'всё перенесено'; }
+  else if (S.dbState==='connecting'){ top = 'Подключение…'; sub = n ? rec(n)+' ждут' : 'к облаку'; }
+  else if (S.dbState==='none'){ cls += ' s-wait'; top = 'Не в облаке'; sub = 'записи только здесь'; }
+  else if (n){ const off = navigator.onLine===false || S.syncErr; cls += ' s-wait'; top = off ? 'Нет сети' : 'Сохраняю…'; sub = off ? rec(n)+' ждут сети' : rec(n); }
+  else { cls += ' s-ok'; top = '✓ Сохранено'; sub = 'в облаке'; }
+  el.className = cls; el.replaceChildren(h('b',{}, top), h('small',{}, sub));
+  el.setAttribute('aria-label', top+', '+sub+'. Подробнее в разделе Ещё');
 }
 
 /* ---------- config & derived ---------- */
